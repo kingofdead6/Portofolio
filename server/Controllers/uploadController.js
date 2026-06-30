@@ -10,7 +10,7 @@ export const uploadImage = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('No image file provided');
   }
-  const folder = req.body.folder || 'portfolio/skills';
+  const folder = req.body?.folder || 'portfolio/skills';
   const uploaded = await uploadToCloudinary(req.files.image, folder);
   res.status(201).json(uploaded);
 });
@@ -18,7 +18,7 @@ export const uploadImage = asyncHandler(async (req, res) => {
 // @desc    Delete an image by public_id (admin)
 // @route   DELETE /api/upload   body: { public_id }
 export const removeImage = asyncHandler(async (req, res) => {
-  const { public_id } = req.body;
+  const public_id = req.body?.public_id;
   if (!public_id) {
     res.status(400);
     throw new Error('public_id is required');

@@ -79,33 +79,53 @@ export default function ProjectPage({ p, onClose, pageRef }) {
               ))}
             </div>
 
-            <div className="pp-el flex flex-wrap gap-4 mt-12">
-              <a
-                href="#"
-                data-hover
-                className="px-6 py-3 rounded-full bg-bone text-ink font-medium hover:scale-[1.03] transition-transform"
-              >
-                View live ↗
-              </a>
-              <a
-                href="#"
-                data-hover
-                className="px-6 py-3 rounded-full border border-bone/35 text-bone hover:bg-bone/10 transition-colors"
-              >
-                Source code
-              </a>
-            </div>
+            {(p.liveUrl || p.sourceUrl) && (
+              <div className="pp-el flex flex-wrap gap-4 mt-12">
+                {p.liveUrl && (
+                  <a
+                    href={p.liveUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    data-hover
+                    className="px-6 py-3 rounded-full bg-bone text-ink font-medium hover:scale-[1.03] transition-transform"
+                  >
+                    View live ↗
+                  </a>
+                )}
+                {p.sourceUrl && (
+                  <a
+                    href={p.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    data-hover
+                    className="px-6 py-3 rounded-full border border-bone/35 text-bone hover:bg-bone/10 transition-colors"
+                  >
+                    Source code ↗
+                  </a>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* visual panel — drop a real screenshot in here */}
+          {/* visual panel — project screenshot, or a gradient placeholder */}
           <div
             className="pp-el relative rounded-3xl overflow-hidden ring-1 ring-white/15 aspect-[4/3] hidden lg:block"
             style={{ background: `linear-gradient(135deg, ${p.c1}, ${p.c2})` }}
           >
-            <div className="noise-layer absolute inset-0 opacity-[0.15] mix-blend-overlay" />
-            <div className="absolute inset-0 grid place-items-center text-bone/40 text-sm tracking-wide">
-              Add a screenshot here
-            </div>
+            {p.image?.url ? (
+              <img
+                src={p.image.url}
+                alt={p.t}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <>
+                <div className="noise-layer absolute inset-0 opacity-[0.15] mix-blend-overlay" />
+                <div className="absolute inset-0 grid place-items-center text-bone/40 text-sm tracking-wide">
+                  Add a screenshot here
+                </div>
+              </>
+            )}
           </div>
         </div>
 

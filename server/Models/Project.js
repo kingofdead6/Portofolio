@@ -11,6 +11,8 @@ const projectSchema = new mongoose.Schema({
   blurb: { type: String, trim: true, default: '' },
   desc: { type: String, default: '' },
   stack: { type: [String], default: [] },
+  liveUrl: { type: String, trim: true, default: '' },
+  sourceUrl: { type: String, trim: true, default: '' },
   c1: { type: String, default: '#7866FF' },
   c2: { type: String, default: '#2A1C9E' },
   image: {

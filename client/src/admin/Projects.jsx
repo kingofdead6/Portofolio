@@ -10,6 +10,8 @@ const EMPTY = {
   blurb: "",
   desc: "",
   stack: "",
+  liveUrl: "",
+  sourceUrl: "",
   c1: "#7866FF",
   c2: "#2A1C9E",
   order: 0,
@@ -175,6 +177,24 @@ export default function Projects() {
                 />
               </Field>
             </div>
+            <Field label="Live URL">
+              <Input
+                value={editing.liveUrl}
+                onChange={(e) =>
+                  setEditing({ ...editing, liveUrl: e.target.value })
+                }
+                placeholder="https://myproject.com"
+              />
+            </Field>
+            <Field label="Source code URL">
+              <Input
+                value={editing.sourceUrl}
+                onChange={(e) =>
+                  setEditing({ ...editing, sourceUrl: e.target.value })
+                }
+                placeholder="https://github.com/you/repo"
+              />
+            </Field>
             <Field label="Color 1">
               <div className="flex gap-2 items-center">
                 <input

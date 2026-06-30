@@ -47,7 +47,7 @@ export const updateProject = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Project not found');
   }
-  const fields = ['t', 'category', 'cat', 'year', 'blurb', 'desc', 'stack', 'c1', 'c2', 'order', 'published'];
+  const fields = ['t', 'category', 'cat', 'year', 'blurb', 'desc', 'stack', 'liveUrl', 'sourceUrl', 'c1', 'c2', 'order', 'published'];
   fields.forEach((f) => {
     if (req.body[f] !== undefined) project[f] = req.body[f];
   });
