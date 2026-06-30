@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import Project from '../Models/Project.js';
+import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinary.js';
 
 // @desc    Get all published projects (public). Ordered for the Work rail.
 // @route   GET /api/projects
@@ -54,6 +55,46 @@ export const updateProject = asyncHandler(async (req, res) => {
   res.json(project);
 });
 
+// @desc    Upload / replace a project's image (admin)
+// @route   POST /api/projects/:id/image   (multipart field: "image")
+export const uploadProjectImage = asyncHandler(async (req, res) => {
+  const project = await Project.findById(req.params.id);
+  if (!project) {
+    res.status(404);
+    throw new Error('Project not found');
+  }
+  if (!req.files || !req.files.image) {
+    res.status(400);
+    throw new Error('No image file provided');
+  }
+
+  // remove the previous asset so we don't orphan files in Cloudinary
+  if (project.image?.public_id) {
+    await deleteFromCloudinary(project.image.public_id);
+  }
+
+  const uploaded = await uploadToCloudinary(req.files.image, 'portfolio/projects');
+  project.image = uploaded;
+  await project.save();
+  res.json(project);
+});
+
+// @desc    Remove a project's image (admin)
+// @route   DELETE /api/projects/:id/image
+export const deleteProjectImage = asyncHandler(async (req, res) => {
+  const project = await Project.findById(req.params.id);
+  if (!project) {
+    res.status(404);
+    throw new Error('Project not found');
+  }
+  if (project.image?.public_id) {
+    await deleteFromCloudinary(project.image.public_id);
+  }
+  project.image = { url: null, public_id: null };
+  await project.save();
+  res.json(project);
+});
+
 // @desc    Delete a project (admin)
 // @route   DELETE /api/projects/:id
 export const deleteProject = asyncHandler(async (req, res) => {
@@ -61,6 +102,9 @@ export const deleteProject = asyncHandler(async (req, res) => {
   if (!project) {
     res.status(404);
     throw new Error('Project not found');
+  }
+  if (project.image?.public_id) {
+    await deleteFromCloudinary(project.image.public_id);
   }
   await Project.deleteOne({ _id: req.params.id });
   res.json({ success: true, message: 'Project deleted' });

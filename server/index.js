@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import fileUpload from 'express-fileupload';
 
 import { errorHandler } from './Middleware/error.js';
 
@@ -11,6 +12,7 @@ import projectRoutes from './Routes/projectRoutes.js';
 import skillRoutes from './Routes/skillRoutes.js';
 import categoryRoutes from './Routes/categoryRoutes.js';
 import statsRoutes from './Routes/statsRoutes.js';
+import uploadRoutes from './Routes/uploadRoutes.js';
 
 dotenv.config();
 
@@ -19,6 +21,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(fileUpload({ limits: { fileSize: 8 * 1024 * 1024 } })); // 8 MB cap
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -33,6 +36,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/skills', skillRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/upload', uploadRoutes);
 
 app.use(errorHandler);
 

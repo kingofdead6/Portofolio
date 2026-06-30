@@ -6,6 +6,8 @@ import {
   createProject,
   updateProject,
   deleteProject,
+  uploadProjectImage,
+  deleteProjectImage,
 } from '../Controllers/projectController.js';
 import { protect, admin } from '../Middleware/auth.js';
 
@@ -19,6 +21,8 @@ router.get('/all', protect, admin, getAllProjects);
 router.post('/', protect, admin, createProject);
 router.put('/:id', protect, admin, updateProject);
 router.delete('/:id', protect, admin, deleteProject);
+router.post('/:id/image', protect, admin, uploadProjectImage);
+router.delete('/:id/image', protect, admin, deleteProjectImage);
 
 // Public single (kept last so /all isn't captured by :id)
 router.get('/:id', getProject);
