@@ -5,7 +5,7 @@ import anime from "animejs";
 import Lenis from "lenis";
 
 import { initThree } from "./lib/blob";
-import { PROJECTS } from "./lib/data";
+import { useData } from "./lib/DataContext";
 
 import Cursor from "./components/Cursor";
 import Nav from "./components/Nav";
@@ -31,6 +31,8 @@ export default function App() {
   const lenisRef = useRef(null);
   const [active, setActive] = useState(null);
   const [activeSec, setActiveSec] = useState("home");
+
+  const { projects, skills, categories, loading } = useData();
 
   // lock scroll behind project page
   useEffect(() => {
@@ -85,6 +87,9 @@ export default function App() {
   }, [active]);
 
   useEffect(() => {
+    // Wait until the API data is in so the project cards / skill tiles exist
+    // in the DOM before ScrollTrigger measures the pinned Work width etc.
+    if (loading) return;
     const el = root.current;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const qa = (s) => Array.from(el.querySelectorAll(s));
@@ -378,7 +383,7 @@ export default function App() {
         /* noop */
       }
     };
-  }, []);
+  }, [loading]);
 
   const scrollTo = (id) => {
     const t = document.getElementById(id);
@@ -390,7 +395,7 @@ export default function App() {
   // keep the overlay on top until the page mounts (entrance effect cross-fades it).
   const openProject = (idx, cardEl) => {
     const ov = transRef.current;
-    const p = PROJECTS[idx];
+    const p = projects[idx];
     if (lenisRef.current) lenisRef.current.stop();
     if (!ov) {
       setActive(idx);
@@ -478,13 +483,18 @@ export default function App() {
       <Nav activeSec={activeSec} scrollTo={scrollTo} />
       <Hero />
       <About />
-      <Skills />
-      <Work openProject={openProject} scrollTo={scrollTo} />
+      <Skills skills={skills} />
+      <Work
+        projects={projects}
+        categories={categories}
+        openProject={openProject}
+        scrollTo={scrollTo}
+      />
       <Contact scrollTo={scrollTo} />
 
-      {active !== null && (
+      {active !== null && projects[active] && (
         <ProjectPage
-          p={PROJECTS[active]}
+          p={projects[active]}
           onClose={closeProject}
           pageRef={pageRef}
         />

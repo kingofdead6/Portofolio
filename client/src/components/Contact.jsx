@@ -2,6 +2,7 @@ import { useState } from "react";
 import anime from "animejs";
 import Split from "./Split";
 import { SOCIALS, EMAIL, CV_URL } from "../lib/data";
+import { api } from "../lib/api";
 
 const FIELDS = [
   ["name", "Your name", "text"],
@@ -19,18 +20,24 @@ const FIELD =
 export default function Contact({ scrollTo }) {
   const [sent, setSent] = useState(false);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    // no backend needed: compose an email the visitor can send from their client
     const data = new FormData(e.currentTarget);
     const name = (data.get("name") || "").toString().trim();
     const email = (data.get("email") || "").toString().trim();
     const msg = (data.get("msg") || "").toString().trim();
-    const subject = `New message from ${name || "your site"}`;
-    const body = `${msg}\n\n— ${name}\n${email}`;
-    window.location.href = `mailto:${EMAIL}?subject=${encodeURIComponent(
-      subject
-    )}&body=${encodeURIComponent(body)}`;
+
+    // Save the message to the backend. If the API is unreachable, fall back to
+    // opening the visitor's mail client so a message is never lost.
+    try {
+      await api.post("/contact", { name, email, message: msg });
+    } catch {
+      const subject = `New message from ${name || "your site"}`;
+      const body = `${msg}\n\n— ${name}\n${email}`;
+      window.location.href = `mailto:${EMAIL}?subject=${encodeURIComponent(
+        subject
+      )}&body=${encodeURIComponent(body)}`;
+    }
 
     setSent(true);
     anime({

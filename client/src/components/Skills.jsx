@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Split from "./Split";
-import { SKILLS, icon } from "../lib/data";
+import { icon } from "../lib/DataContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -24,8 +24,14 @@ function SkillTile({ it, accent }) {
       <div className="tile-glare pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 mix-blend-overlay" />
 
       <div className="relative flex items-start justify-between">
-        <div className="grid h-12 w-12 place-items-center rounded-xl bg-white/5 ring-1 ring-white/10 transition-colors duration-500 group-hover:ring-white/25">
-          {it.i ? (
+        <div className="grid h-12 w-12 place-items-center rounded-xl bg-white/5 ring-1 ring-white/10 transition-colors duration-500 group-hover:ring-white/25 overflow-hidden">
+          {it.image?.url ? (
+            <img
+              src={it.image.url}
+              alt={it.n}
+              className="h-full w-full object-cover transition-all duration-500"
+            />
+          ) : it.i ? (
             <img
               src={icon(it.i)}
               alt={it.n}
@@ -63,7 +69,8 @@ function SkillTile({ it, accent }) {
   );
 }
 
-export default function Skills() {
+export default function Skills({ skills = [] }) {
+  const SKILLS = skills;
   const sectionRef = useRef(null);
 
   useEffect(() => {
@@ -76,6 +83,11 @@ export default function Skills() {
     const groups = Array.from(sec.querySelectorAll(".skill-group"));
     const pills = Array.from(sec.querySelectorAll(".skills-cat"));
     const removers = [];
+
+    // Data arrives asynchronously from the API, so the very first effect run
+    // can happen before any .skill-group exists. Bail until they're rendered;
+    // the [skills] dependency re-runs this once the tiles are in the DOM.
+    if (groups.length === 0) return;
 
     // ---------- fallback: natural flow (mobile / reduced motion) ----------
     if (reduce || !desktop) {
@@ -261,7 +273,8 @@ export default function Skills() {
       removers.forEach((r) => r());
       ctx.revert();
     };
-  }, []);
+    // re-run if the skills data arrives/changes so the tiles are measured
+  }, [skills]);
 
   return (
     <section

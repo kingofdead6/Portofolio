@@ -1,6 +1,5 @@
 import { useEffect, useRef, Fragment } from "react";
 import { gsap } from "gsap";
-import { PROJECTS, CATEGORIES } from "../lib/data";
 
 /* big colour-zoned divider between categories in the horizontal rail */
 function CategorySlab({ cat, index, count }) {
@@ -68,9 +67,14 @@ function ProjectCard({ p, index, num, accent, onOpen }) {
         style={{ aspectRatio: "4/5", willChange: "transform" }}
       >
         <div
-          className="work-img absolute inset-0"
+          className="work-img absolute inset-0 bg-cover bg-center"
           style={{
-            background: `radial-gradient(120% 120% at 75% 12%, ${p.c1} 0%, ${p.c2} 58%, #0A0A0E 100%)`,
+            // If the project has an image, show it tinted with c1/c2 so the
+            // colourful design language is preserved; otherwise fall back to
+            // the original pure colour gradient (identical to before).
+            backgroundImage: p.image?.url
+              ? `radial-gradient(120% 120% at 75% 12%, ${p.c1}cc 0%, ${p.c2}b3 55%, rgba(10,10,14,.92) 100%), url(${p.image.url})`
+              : `radial-gradient(120% 120% at 75% 12%, ${p.c1} 0%, ${p.c2} 58%, #0A0A0E 100%)`,
             willChange: "transform",
           }}
         />
@@ -124,7 +128,7 @@ function ProjectCard({ p, index, num, accent, onOpen }) {
   );
 }
 
-export default function Work({ openProject, scrollTo }) {
+export default function Work({ projects = [], categories = [], openProject, scrollTo }) {
   const sectionRef = useRef(null);
 
   // interactive 3D tilt + glare on the cards (pointer devices only)
@@ -187,8 +191,8 @@ export default function Work({ openProject, scrollTo }) {
           className="work-track flex items-center gap-6 md:gap-10 px-6 md:px-12"
           style={{ willChange: "transform" }}
         >
-          {CATEGORIES.map((cat, ci) => {
-            const items = PROJECTS.map((p, idx) => ({ p, idx })).filter(
+          {categories.map((cat, ci) => {
+            const items = projects.map((p, idx) => ({ p, idx })).filter(
               (x) => x.p.category === cat.key
             );
             return (
