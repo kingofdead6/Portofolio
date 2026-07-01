@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
+import Cursor from "../components/Cursor";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -28,6 +29,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-[#08080B] text-bone font-body grid place-items-center px-4">
+      <Cursor />
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <h1 className="font-display font-extrabold text-3xl tracking-tight">

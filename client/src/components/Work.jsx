@@ -179,7 +179,7 @@ export default function Work({ projects = [], categories = [], openProject, scro
   }, []);
 
   return (
-    <section ref={sectionRef} id="work" className="relative z-10 bg-ink overflow-hidden">
+    <section ref={sectionRef} id="work" className="relative z-10 bg-ink/70 overflow-hidden">
       <div className="absolute top-10 left-6 md:left-12 z-20 flex items-center gap-3 text-xs tracking-[0.24em] uppercase text-bone/55">
         <span className="font-display font-bold text-violet">03</span>
         <span className="w-7 h-px bg-violet inline-block" />

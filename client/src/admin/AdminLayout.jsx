@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { getToken, clearToken } from "../lib/api";
+import Cursor from "../components/Cursor";
 
 const LINKS = [
   ["/admin", "Overview", true],
@@ -27,6 +28,7 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-[#08080B] text-bone font-body flex">
+      <Cursor />
       {/* sidebar */}
       <aside className="w-60 shrink-0 border-r border-line p-5 flex flex-col gap-1 sticky top-0 h-screen">
         <div className="mb-6">

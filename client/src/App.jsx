@@ -15,12 +15,15 @@ import Skills from "./components/Skills";
 import Work from "./components/Work";
 import Contact from "./components/Contact";
 import ProjectPage from "./components/ProjectPage";
+import { GravityStarsBackground } from "./components/bg";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// keep overlay + page gradients identical so the cross-fade is seamless
-const projectBg = (p) =>
-  `radial-gradient(120% 120% at 80% 0%, ${p.c1} 0%, ${p.c2} 55%, #08080B 100%)`;
+// The project page has no background of its own — it shows the same starry
+// backdrop as every other section. The open/close FLIP overlay therefore uses
+// a neutral, mostly-transparent tint so the transition reveals that same
+// background instead of a distinct dark colored panel.
+const projectBg = () => "rgba(11, 11, 15, 0.55)";
 
 export default function App() {
   const root = useRef(null);
@@ -117,17 +120,6 @@ export default function App() {
     gsap.ticker.add(lenisTick);
     gsap.ticker.lagSmoothing(0);
 
-    // *** THE FIX ***
-    // Lenis caches a max-scroll value when it's created. If the document's
-    // real height changes afterwards (images loading, fonts swapping in,
-    // the pinned #work section resizing once it knows its true width),
-    // Lenis is NOT automatically told about it. It keeps clamping scroll
-    // to the OLD, shorter height — so sections placed after that point
-    // (like #contact) become physically unreachable by scrolling, even
-    // though they're sitting right there in the DOM. Their ScrollTrigger
-    // reveal animations (gsap.from(..., autoAlpha: 0, scrollTrigger))
-    // never fire, so they stay invisible forever.
-    // Fix: resync Lenis every time ScrollTrigger recalculates the page.
     const onStRefresh = () => lenis.resize();
     ScrollTrigger.addEventListener("refresh", onStRefresh);
 
@@ -363,6 +355,7 @@ export default function App() {
     const refreshT = setTimeout(() => ScrollTrigger.refresh(), 1400);
 
     return () => {
+      
       window.removeEventListener("load", onLoad);
       clearTimeout(refreshT);
       gsap.ticker.remove(lenisTick);
@@ -463,7 +456,23 @@ export default function App() {
   };
 
   return (
+
     <div ref={root} className="font-body text-bone">
+      {/* animated gravity-stars background — fixed behind all content */}
+      <div
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{ color: "#ECECF1" }}
+        aria-hidden="true"
+      >
+        <GravityStarsBackground
+          starsCount={90}
+          starsOpacity={0.7}
+          glowIntensity={14}
+          mouseInfluence={140}
+          gravityStrength={80}
+          className="pointer-events-auto"
+        />
+      </div>
       <div className="ambient ambient--1" />
       <div className="ambient ambient--2" />
       <canvas id="bg" ref={canvasRef}></canvas>

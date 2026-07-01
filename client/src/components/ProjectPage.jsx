@@ -7,12 +7,9 @@ export default function ProjectPage({ p, onClose, pageRef }) {
     <div
       ref={pageRef}
       className="fixed inset-0 z-[60] overflow-y-auto"
-      style={{
-        background: `radial-gradient(120% 120% at 80% 0%, ${p.c1} 0%, ${p.c2} 55%, #08080B 100%)`,
-      }}
+   
     >
       <div className="grain" />
-      <div className="noise-layer absolute inset-0 opacity-[0.08] mix-blend-overlay pointer-events-none" />
 
       {/* watermark title */}
       <div

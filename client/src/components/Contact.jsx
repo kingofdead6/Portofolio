@@ -52,7 +52,7 @@ export default function Contact({ scrollTo }) {
   return (
     <section
       id="contact"
-      className="relative z-10 bg-ink px-6 md:px-12 py-32 overflow-hidden"
+      className="relative z-10 px-6 md:px-12 py-32 overflow-hidden"
     >
       {/* faint background word */}
       <span
@@ -179,7 +179,7 @@ export default function Contact({ scrollTo }) {
             <div className="mt-6">
               <a
                 href={CV_URL}
-                download
+                download="cv.pdf"
                 data-hover
                 data-mag
                 className="group inline-flex items-center gap-2 px-6 py-3 rounded-full border border-bone/35 text-bone hover:bg-bone/10 transition-colors"

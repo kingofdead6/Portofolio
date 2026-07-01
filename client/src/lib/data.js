@@ -1,5 +1,9 @@
 /* ----------------------------- DATA ----------------------------- */
 
+// The CV lives in src/assets and is imported so Vite bundles it and hands us
+// the correct built URL (a bare string path would not be resolved/copied).
+import cvPdf from "../assets/cv.pdf";
+
 export const NAV = [
   ["Home", "home"],
   ["About", "about"],
@@ -155,14 +159,13 @@ export const PROJECTS = [
 ];
 
 /* ---- contact details — swap these for your real ones ---- */
-export const EMAIL = "hello@youcef.dev";
+export const EMAIL = "youceftargerian@gmail.com";
 
-// place the PDF in your project's /public folder, e.g. public/Youcef-CV.pdf
-export const CV_URL = "/Youcef-CV.pdf";
+export const CV_URL = cvPdf;
 
 export const SOCIALS = [
-  ["Instagram", "https://instagram.com/your_handle"],
+  ["Instagram", "https://instagram.com/softwebelevation"],
   // WhatsApp: country code + number, no +, no spaces. Algeria = 213.
-  ["WhatsApp", "https://wa.me/2136XXXXXXXX"],
-  ["GitHub", "https://github.com/your_username"],
+  ["WhatsApp", "https://wa.me/213553670046"],
+  ["GitHub", "https://github.com/kingofdead6"],
 ];
