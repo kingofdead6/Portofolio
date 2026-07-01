@@ -77,10 +77,11 @@ export default function Skills({ skills = [] }) {
     const sec = sectionRef.current;
     if (!sec) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    // Only the pointer-driven tilt/glare needs a real mouse. The pinned
-    // scroll stepper itself runs on every device now (phones included) —
-    // it was previously gated behind `hover:hover` + `min-width:1024px`,
-    // which is exactly why the animation never appeared on touch devices.
+    // >=1024px gets the pinned, one-category-at-a-time stepper (4-col grid fits).
+    // Below that (phones / small tablets) we use a natural-flow reveal instead —
+    // see the mobile branch below for why.
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+    // Pointer-only tilt/glare — touch devices skip it.
     const hoverable = window.matchMedia("(hover: hover)").matches;
     const groups = Array.from(sec.querySelectorAll(".skill-group"));
     const pills = Array.from(sec.querySelectorAll(".skills-cat"));
@@ -91,36 +92,7 @@ export default function Skills({ skills = [] }) {
     // the [skills] dependency re-runs this once the tiles are in the DOM.
     if (groups.length === 0) return;
 
-    // ---------- fallback: natural flow (reduced motion only) ----------
-    // We now ONLY drop to the static stacked layout when the visitor has
-    // asked for reduced motion. Touch / small screens get the real animation.
-    if (reduce) {
-      sec.style.height = "auto";
-      sec.style.justifyContent = "flex-start";
-      sec.classList.remove("overflow-hidden");
-      const stage = sec.querySelector(".skills-stage");
-      if (stage) {
-        stage.style.position = "static";
-        stage.style.height = "auto";
-        stage.style.flex = "none";
-      }
-      groups.forEach((g, i) => {
-        g.style.position = "relative";
-        g.style.opacity = "1";
-        g.style.visibility = "visible";
-        if (i < groups.length - 1) g.style.marginBottom = "4rem";
-      });
-      pills.forEach((p) => (p.style.opacity = "1"));
-      return;
-    }
-
-    // ---------- pinned scroll-driven stepper (all devices) ----------
-    groups.forEach((g, i) => {
-      gsap.set(g, { autoAlpha: i === 0 ? 1 : 0, yPercent: i === 0 ? 0 : 14 });
-      g.querySelectorAll(".tile-bar").forEach((b) => gsap.set(b, { scaleX: 0 }));
-      g.querySelectorAll(".tile-num").forEach((n) => (n.textContent = "0"));
-    });
-
+    // shared: light up a category's bars + count-up numbers the first time it's seen
     const activated = new Set();
     const activate = (g) => {
       if (activated.has(g)) return;
@@ -141,6 +113,96 @@ export default function Skills({ skills = [] }) {
         });
       });
     };
+
+    // helper: strip the pinned/absolute stage layout back to normal document flow
+    const flowLayout = (gap) => {
+      sec.style.height = "auto";
+      sec.style.justifyContent = "flex-start";
+      sec.classList.remove("overflow-hidden");
+      const stage = sec.querySelector(".skills-stage");
+      if (stage) {
+        stage.style.position = "static";
+        stage.style.height = "auto";
+        stage.style.flex = "none";
+      }
+      groups.forEach((g, i) => {
+        g.style.position = "relative";
+        g.style.opacity = "1";
+        g.style.visibility = "visible";
+        if (i < groups.length - 1) g.style.marginBottom = gap;
+      });
+    };
+
+    // ---------- reduced motion: plain static flow, no animation ----------
+    if (reduce) {
+      flowLayout("4rem");
+      pills.forEach((p) => (p.style.opacity = "1"));
+      return;
+    }
+
+    // ---------- MOBILE: natural-flow reveal ----------
+    // Each category is a normal stacked block, so the amount you scroll through
+    // it is set by how many cards it has (more cards = taller = more scroll),
+    // and the next category only begins once you've scrolled past this one's
+    // cards. Nothing is absolutely stacked on top of anything else, so no two
+    // pieces of text can ever overlap.
+    if (!isDesktop) {
+      flowLayout("3.5rem");
+      // start each category's bars/numbers from zero so they animate on reveal
+      groups.forEach((g) => {
+        g.querySelectorAll(".tile-bar").forEach((b) => gsap.set(b, { scaleX: 0 }));
+        g.querySelectorAll(".tile-num").forEach((n) => (n.textContent = "0"));
+      });
+
+      const ctx = gsap.context(() => {
+        // heading
+        gsap.from(sec.querySelectorAll(".skills-head .mask span"), {
+          yPercent: 110,
+          duration: 1,
+          ease: "power4.out",
+          stagger: 0.04,
+          scrollTrigger: { trigger: sec, start: "top 80%" },
+        });
+
+        groups.forEach((g, i) => {
+          const cards = g.querySelectorAll(".skill-card");
+          // cards for this category rise + fade in when it scrolls into view
+          gsap.from(cards, {
+            y: 44,
+            autoAlpha: 0,
+            duration: 0.6,
+            ease: "power3.out",
+            stagger: 0.08,
+            scrollTrigger: {
+              trigger: g,
+              start: "top 80%",
+              once: true,
+              onEnter: () => activate(g),
+            },
+          });
+          // highlight the matching category pill while this block is centred
+          ScrollTrigger.create({
+            trigger: g,
+            start: "top 55%",
+            end: "bottom 55%",
+            onToggle: (self) => {
+              if (self.isActive) {
+                pills.forEach((p, pi) => (p.style.opacity = pi === i ? "1" : "0.35"));
+              }
+            },
+          });
+        });
+      }, sec);
+
+      return () => ctx.revert();
+    }
+
+    // ---------- DESKTOP: pinned scroll-driven stepper ----------
+    groups.forEach((g, i) => {
+      gsap.set(g, { autoAlpha: i === 0 ? 1 : 0, yPercent: i === 0 ? 0 : 14 });
+      g.querySelectorAll(".tile-bar").forEach((b) => gsap.set(b, { scaleX: 0 }));
+      g.querySelectorAll(".tile-num").forEach((n) => (n.textContent = "0"));
+    });
 
     const ctx = gsap.context(() => {
       // heading reveal (non-scrub, as you arrive)

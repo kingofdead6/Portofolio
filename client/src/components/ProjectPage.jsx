@@ -134,9 +134,10 @@ export default function ProjectPage({ p, onClose, pageRef }) {
             )}
           </div>
 
-          {/* visual panel — project screenshot, or a gradient placeholder */}
+          {/* visual panel — a small, sharp copy of the project screenshot so
+              it reads clearly on top of the softened full-bleed background */}
           <div
-            className="pp-el relative rounded-3xl overflow-hidden ring-1 ring-white/15 aspect-[4/3] hidden lg:block"
+            className="pp-el relative rounded-3xl overflow-hidden ring-1 ring-white/15 aspect-[4/3] shadow-2xl shadow-black/40"
             style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}
           >
             {p.image?.url ? (
