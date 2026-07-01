@@ -373,8 +373,15 @@ tl.add(
     };
   }, [loading]);
 
-  const scrollTo = (id) => {
-    const t = document.getElementById(id);
+  const scrollTo = (target) => {
+    // `target` is either a section id (string) or an absolute pixel position
+    // (number) — the latter lets the Work rail jump to a specific category.
+    if (typeof target === "number") {
+      if (lenisRef.current) lenisRef.current.scrollTo(target, { duration: 1.4 });
+      else window.scrollTo({ top: target, behavior: "smooth" });
+      return;
+    }
+    const t = document.getElementById(target);
     if (lenisRef.current) lenisRef.current.scrollTo(t, { offset: 0, duration: 1.4 });
     else if (t) t.scrollIntoView({ behavior: "smooth" });
   };

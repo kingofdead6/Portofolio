@@ -1,6 +1,35 @@
-import { useEffect, useRef, Fragment } from "react";
+import { useEffect, useRef, useState, Fragment } from "react";
 import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { cardGradient } from "../lib/data";
+
+gsap.registerPlugin(ScrollTrigger);
+
+/* one filter pill */
+function FilterChip({ label, accent, active, count, onClick }) {
+  return (
+    <button
+      data-hover
+      onClick={onClick}
+      className={
+        "flex-none rounded-full border px-4 py-1.5 text-sm font-display font-medium whitespace-nowrap transition-colors duration-300 " +
+        (active
+          ? ""
+          : "border-line text-bone/65 hover:text-bone hover:border-bone/40")
+      }
+      style={
+        active
+          ? { background: accent, borderColor: accent, color: "#0B0B0F" }
+          : undefined
+      }
+    >
+      {label}
+      {typeof count === "number" && (
+        <span className="ml-1.5 text-[11px] opacity-60 tabular-nums">{count}</span>
+      )}
+    </button>
+  );
+}
 
 /* big colour-zoned divider between categories in the horizontal rail */
 function CategorySlab({ cat, index, count }) {
@@ -55,6 +84,10 @@ function EmptyCard({ accent }) {
   );
 }
 
+/* ---- redesigned project card ----
+   Keeps every animation hook (.work-card / .work-card-inner / .work-img /
+   .work-glare, the onClick currentTarget used for the FLIP open, and the
+   per-project gradient) — only the visual layer on top is reworked. */
 function ProjectCard({ p, index, num, accent, onOpen }) {
   // colours are picked at random (stable per project) rather than hand-set
   const { c1, c2 } = cardGradient(p);
@@ -66,15 +99,13 @@ function ProjectCard({ p, index, num, accent, onOpen }) {
       style={{ width: "clamp(280px,72vw,460px)", perspective: "1000px" }}
     >
       <div
-        className="work-card-inner relative rounded-[28px] overflow-hidden ring-1 ring-white/10"
+        className="work-card-inner relative rounded-[26px] overflow-hidden ring-1 ring-white/10 transition-shadow duration-500 group-hover:shadow-2xl group-hover:shadow-black/50"
         style={{ aspectRatio: "4/5", willChange: "transform" }}
       >
+        {/* image / gradient background — parallax target (scaled in App.jsx) */}
         <div
           className="work-img absolute inset-0 bg-cover bg-center"
           style={{
-            // If the project has an image, show it tinted with the random
-            // gradient so the colourful design language is preserved;
-            // otherwise use the pure colour gradient.
             backgroundImage: p.image?.url
               ? `radial-gradient(120% 120% at 75% 12%, ${c1}cc 0%, ${c2}b3 55%, rgba(10,10,14,.92) 100%), url(${p.image.url})`
               : `radial-gradient(120% 120% at 75% 12%, ${c1} 0%, ${c2} 58%, #0A0A0E 100%)`,
@@ -82,47 +113,96 @@ function ProjectCard({ p, index, num, accent, onOpen }) {
           }}
         />
         <div className="noise-layer absolute inset-0 opacity-[0.12] mix-blend-overlay pointer-events-none" />
+
+        {/* legibility scrim — stronger toward the bottom where the text sits */}
         <div
           className="absolute inset-0"
-          style={{ background: "linear-gradient(180deg,transparent 40%,rgba(8,8,11,.82))" }}
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(8,8,11,.15) 0%, transparent 32%, rgba(8,8,11,.4) 58%, rgba(8,8,11,.92) 100%)",
+          }}
         />
+
+        {/* accent bar that draws across the top edge on hover */}
+        <div
+          className="absolute top-0 left-0 h-[3px] w-0 group-hover:w-full transition-all duration-700 ease-out"
+          style={{ background: accent }}
+        />
+
+        {/* top row — frosted index + year tags */}
+        <div className="absolute top-4 left-4 right-4 flex items-start justify-between">
+          <span
+            className="font-display font-bold text-xs tabular-nums rounded-full px-2.5 py-1 bg-black/35 backdrop-blur-md ring-1 ring-white/10"
+            style={{ color: accent }}
+          >
+            {String(num).padStart(2, "0")}
+          </span>
+          <span className="text-[10px] tracking-[0.2em] uppercase text-bone/75 rounded-full bg-black/35 backdrop-blur-md ring-1 ring-white/10 px-3 py-1">
+            {p.year}
+          </span>
+        </div>
+
         {/* accent edge on hover */}
         <div
-          className="pointer-events-none absolute inset-0 rounded-[28px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          className="pointer-events-none absolute inset-0 rounded-[26px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
           style={{ boxShadow: `inset 0 0 0 1px ${accent}` }}
         />
         {/* cursor glare for the 3D tilt */}
         <div className="work-glare pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 mix-blend-overlay" />
 
-        <span
-          className="absolute -top-3 right-4 font-display font-extrabold leading-none text-white/10 select-none"
-          style={{ fontSize: "clamp(5rem,12vw,9rem)" }}
-        >
-          {String(num).padStart(2, "0")}
-        </span>
-
-        <div className="absolute top-5 left-5">
-          <span className="text-[10px] tracking-[0.2em] uppercase text-bone/70 rounded-full bg-black/25 backdrop-blur px-3 py-1">
-            {p.year}
-          </span>
-        </div>
-
-        <div className="absolute bottom-5 left-5 right-5">
-          <div className="text-[11px] tracking-[0.18em] uppercase" style={{ color: accent }}>
+        {/* bottom content block */}
+        <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
+          <div
+            className="text-[11px] tracking-[0.22em] uppercase font-semibold"
+            style={{ color: accent }}
+          >
             {p.cat}
           </div>
+
           <h3
-            className="font-display font-extrabold tracking-tight mt-1.5 leading-none"
-            style={{ fontSize: "clamp(1.4rem,3vw,2.3rem)" }}
+            className="font-display font-extrabold tracking-tight mt-2 leading-[0.95]"
+            style={{ fontSize: "clamp(1.5rem,3.2vw,2.2rem)" }}
           >
             {p.t}
           </h3>
-          <div className="mt-4 flex items-center gap-2 text-sm text-bone">
-            <span className="translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+
+          {/* short accent rule that extends on hover */}
+          <div
+            className="h-px mt-3 w-10 group-hover:w-20 transition-all duration-500 ease-out"
+            style={{ background: accent }}
+          />
+
+          {/* tech stack — smoothly expands in on hover */}
+          {p.stack?.length > 0 && (
+            <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-500 ease-out">
+              <div className="overflow-hidden">
+                <div className="flex flex-wrap gap-1.5 mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                  {p.stack.slice(0, 3).map((s) => (
+                    <span
+                      key={s}
+                      className="text-[11px] rounded-full px-2.5 py-1 bg-white/10 ring-1 ring-white/15 text-bone/80 backdrop-blur-sm"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* CTA row — label + circular arrow that fills with the accent */}
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-sm text-bone/80 font-medium tracking-wide">
               View project
             </span>
-            <span className="translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 delay-75">
-              →
+            <span className="relative grid place-items-center h-10 w-10 rounded-full ring-1 ring-white/25 overflow-hidden text-bone group-hover:text-ink transition-colors duration-300">
+              <span
+                className="absolute inset-0 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300 ease-out"
+                style={{ background: accent }}
+              />
+              <span className="relative text-lg leading-none transition-transform duration-300 group-hover:translate-x-0.5">
+                →
+              </span>
             </span>
           </div>
         </div>
@@ -133,8 +213,33 @@ function ProjectCard({ p, index, num, accent, onOpen }) {
 
 export default function Work({ projects = [], categories = [], openProject, scrollTo }) {
   const sectionRef = useRef(null);
+  const [activeCat, setActiveCat] = useState("all");
 
-  // interactive 3D tilt + glare on the cards (pointer devices only)
+  // which categories are rendered into the rail right now
+  const shownCategories =
+    activeCat === "all"
+      ? categories
+      : categories.filter((c) => c.key === activeCat);
+
+  // small helper: how many projects sit in a given category
+  const countFor = (key) => projects.filter((p) => p.category === key).length;
+
+  // When the filter changes, the rail's total width changes — so the pinned
+  // horizontal scroll distance (set up in App.jsx with invalidateOnRefresh)
+  // must be recomputed. We refresh on the next frame (after React paints the
+  // new set) and snap back to the top of the section so the filtered rail
+  // reads from its first card.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      ScrollTrigger.refresh();
+      if (scrollTo) scrollTo("work");
+    });
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCat]);
+
+  // interactive 3D tilt + glare on the cards (pointer devices only).
+  // Re-runs whenever the visible set changes so freshly-shown cards get wired up.
   useEffect(() => {
     if (!window.matchMedia("(hover:hover)").matches) return;
     const sec = sectionRef.current;
@@ -179,14 +284,37 @@ export default function Work({ projects = [], categories = [], openProject, scro
     });
 
     return () => removers.forEach((r) => r());
-  }, []);
+  }, [activeCat, projects.length, categories.length]);
 
   return (
     <section ref={sectionRef} id="work" className="relative z-10 bg-ink/70 overflow-hidden">
-      <div className="absolute top-10 left-6 md:left-12 z-20 flex items-center gap-3 text-xs tracking-[0.24em] uppercase text-bone/55">
-        <span className="font-display font-bold text-violet">03</span>
-        <span className="w-7 h-px bg-violet inline-block" />
-        Selected work — by category
+      {/* header + filter chips (stay visible through the pin) */}
+      <div className="absolute top-8 md:top-10 left-0 right-0 z-20 px-6 md:px-12">
+        <div className="flex items-center gap-3 text-xs tracking-[0.24em] uppercase text-bone/55">
+          <span className="font-display font-bold text-violet">03</span>
+          <span className="w-7 h-px bg-violet inline-block" />
+          Selected work
+        </div>
+
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+          <FilterChip
+            label="All"
+            accent="#7866FF"
+            active={activeCat === "all"}
+            count={projects.length}
+            onClick={() => setActiveCat("all")}
+          />
+          {categories.map((c) => (
+            <FilterChip
+              key={c.key}
+              label={c.label}
+              accent={c.accent}
+              active={activeCat === c.key}
+              count={countFor(c.key)}
+              onClick={() => setActiveCat(c.key)}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="h-screen flex items-center">
@@ -194,10 +322,10 @@ export default function Work({ projects = [], categories = [], openProject, scro
           className="work-track flex items-center gap-6 md:gap-10 px-6 md:px-12"
           style={{ willChange: "transform" }}
         >
-          {categories.map((cat, ci) => {
-            const items = projects.map((p, idx) => ({ p, idx })).filter(
-              (x) => x.p.category === cat.key
-            );
+          {shownCategories.map((cat, ci) => {
+            const items = projects
+              .map((p, idx) => ({ p, idx }))
+              .filter((x) => x.p.category === cat.key);
             return (
               <Fragment key={cat.key}>
                 <CategorySlab cat={cat} index={ci} count={items.length} />
