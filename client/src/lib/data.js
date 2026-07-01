@@ -66,6 +66,36 @@ export const SKILLS = [
 export const icon = (i) =>
   `https://cdn.jsdelivr.net/gh/devicons/devicon/icons/${i}.svg`;
 
+/* ---- Random project card gradients ----
+   Instead of hand-picking c1/c2 per project, we pick a colour pair at random
+   from a curated on-brand palette. The choice is derived from a stable string
+   key (the project title), so a given project keeps the SAME gradient across
+   renders and across the card + detail page — it just isn't chosen by hand. */
+const CARD_GRADIENTS = [
+  ["#7866FF", "#2A1C9E"], // violet
+  ["#5BE9B9", "#0B6E4F"], // mint
+  ["#FF8A3D", "#9E3A12"], // amber
+  ["#38D6FF", "#0B5E83"], // cyan
+  ["#FF5E8A", "#9E1640"], // pink
+  ["#9A6BFF", "#3A1C7E"], // indigo
+  ["#48B6FF", "#143A99"], // blue
+  ["#FFD166", "#8A5A00"], // gold
+];
+
+// simple deterministic hash → stable index for a given key
+const hashKey = (key = "") => {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
+  return Math.abs(h);
+};
+
+// returns { c1, c2 } for a project — random per project, stable per session
+export const cardGradient = (project) => {
+  const key = project?.t || project?.title || project?._id || "";
+  const [c1, c2] = CARD_GRADIENTS[hashKey(key) % CARD_GRADIENTS.length];
+  return { c1, c2 };
+};
+
 /* High-level work categories. `key` ties projects to a category; `accent`
    colour-zones each section of the rail. Rename labels/sub freely. */
 export const CATEGORIES = [

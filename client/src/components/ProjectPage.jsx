@@ -1,14 +1,44 @@
-import { CATEGORIES } from "../lib/data";
+import { CATEGORIES, cardGradient } from "../lib/data";
 
 export default function ProjectPage({ p, onClose, pageRef }) {
   const catLabel = (CATEGORIES.find((c) => c.key === p.category) || {}).label;
+  // same random-but-stable gradient the card uses, so both stay in sync
+  const { c1, c2 } = cardGradient(p);
 
   return (
     <div
       ref={pageRef}
       className="fixed inset-0 z-[60] overflow-y-auto"
-   
     >
+      {/* ---- full-bleed background: the project's own image ----
+          Fixed so it stays put while the content scrolls over it. The project
+          image is tinted with the same stable gradient the card uses and
+          darkened toward the edges/bottom so the text stays readable. Falls
+          back to a pure gradient when the project has no image. */}
+      <div className="pointer-events-none fixed inset-0 -z-10" aria-hidden>
+        {p.image?.url ? (
+          <>
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url(${p.image.url})` }}
+            />
+            {/* colour wash + darkening for legibility */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(135deg, ${c1}55, ${c2}44), linear-gradient(180deg, rgba(11,11,15,0.55) 100%, rgba(11,11,15,0.92) 100%, rgba(11,11,15,0.55) 100%)`,
+              }}
+            />
+          </>
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}
+          />
+        )}
+        <div className="noise-layer absolute inset-0 opacity-[0.12] mix-blend-overlay" />
+      </div>
+
       <div className="grain" />
 
       {/* watermark title */}
@@ -107,7 +137,7 @@ export default function ProjectPage({ p, onClose, pageRef }) {
           {/* visual panel — project screenshot, or a gradient placeholder */}
           <div
             className="pp-el relative rounded-3xl overflow-hidden ring-1 ring-white/15 aspect-[4/3] hidden lg:block"
-            style={{ background: `linear-gradient(135deg, ${p.c1}, ${p.c2})` }}
+            style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}
           >
             {p.image?.url ? (
               <img

@@ -188,6 +188,20 @@ canvas#bg {
   .cursor__trailwrap { display: none; }
 }
 
+/* endless-scrolling accent line beside each skills category header.
+   The gradient is only 50% wide and repeats, so shifting background-position
+   by one tile loops seamlessly forever. */
+.group-line {
+  animation: lineScroll 2.2s linear infinite;
+}
+@keyframes lineScroll {
+  from { background-position: 0 0; }
+  to { background-position: 120px 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .group-line { animation: none; }
+}
+
 /* ---- Helpers ---- */
 .mask {
   overflow: hidden;

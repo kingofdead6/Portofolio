@@ -148,18 +148,25 @@ export default function Skills({ skills = [] }) {
         scrollTrigger: { trigger: sec, start: "top 70%" },
       });
 
-      // marquee drift across the whole pinned range
+      // endless marquee — two identical copies, wrapped at one-copy width so it
+      // loops seamlessly. Scrubbed across the exact same scroll distance as the
+      // card stepper below, so the strip travels in lockstep with the cards.
       const track = sec.querySelector(".skills-marquee-track");
       if (track) {
-        gsap.fromTo(
-          track,
-          { xPercent: 4 },
-          {
-            xPercent: -38,
-            ease: "none",
-            scrollTrigger: { trigger: sec, start: "top top", end: "bottom top", scrub: 1 },
-          }
-        );
+        const wrapX = gsap.utils.wrap(-50, 0); // one copy = 50% of the track width
+        gsap.to(track, {
+          xPercent: -50 * 0.5, // 6 copy-lengths over the pin; wrap keeps it infinite
+          ease: "none",
+          modifiers: {
+            xPercent: (v) => wrapX(parseFloat(v)),
+          },
+          scrollTrigger: {
+            trigger: sec,
+            start: "top top",
+            end: "+=" + groups.length * 85 + "%", // == the pinned timeline's range
+            scrub: 1,
+          },
+        });
       }
 
       const total = groups.length;
@@ -340,8 +347,12 @@ export default function Skills({ skills = [] }) {
                 ({String(grp.items.length).padStart(2, "0")})
               </span>
               <span
-                className="hidden sm:block flex-1 h-px"
-                style={{ background: `linear-gradient(90deg, ${grp.accent}55, transparent)` }}
+                className="group-line hidden sm:block flex-1 h-px"
+                style={{
+                  backgroundImage: `linear-gradient(90deg, transparent, ${grp.accent}99 50%, transparent)`,
+                  backgroundSize: "120px 100%",
+                  backgroundRepeat: "repeat-x",
+                }}
               />
             </div>
 

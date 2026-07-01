@@ -1,5 +1,6 @@
 import { useEffect, useRef, Fragment } from "react";
 import { gsap } from "gsap";
+import { cardGradient } from "../lib/data";
 
 /* big colour-zoned divider between categories in the horizontal rail */
 function CategorySlab({ cat, index, count }) {
@@ -55,6 +56,8 @@ function EmptyCard({ accent }) {
 }
 
 function ProjectCard({ p, index, num, accent, onOpen }) {
+  // colours are picked at random (stable per project) rather than hand-set
+  const { c1, c2 } = cardGradient(p);
   return (
     <article
       data-hover
@@ -69,12 +72,12 @@ function ProjectCard({ p, index, num, accent, onOpen }) {
         <div
           className="work-img absolute inset-0 bg-cover bg-center"
           style={{
-            // If the project has an image, show it tinted with c1/c2 so the
-            // colourful design language is preserved; otherwise fall back to
-            // the original pure colour gradient (identical to before).
+            // If the project has an image, show it tinted with the random
+            // gradient so the colourful design language is preserved;
+            // otherwise use the pure colour gradient.
             backgroundImage: p.image?.url
-              ? `radial-gradient(120% 120% at 75% 12%, ${p.c1}cc 0%, ${p.c2}b3 55%, rgba(10,10,14,.92) 100%), url(${p.image.url})`
-              : `radial-gradient(120% 120% at 75% 12%, ${p.c1} 0%, ${p.c2} 58%, #0A0A0E 100%)`,
+              ? `radial-gradient(120% 120% at 75% 12%, ${c1}cc 0%, ${c2}b3 55%, rgba(10,10,14,.92) 100%), url(${p.image.url})`
+              : `radial-gradient(120% 120% at 75% 12%, ${c1} 0%, ${c2} 58%, #0A0A0E 100%)`,
             willChange: "transform",
           }}
         />

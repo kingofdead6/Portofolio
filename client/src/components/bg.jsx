@@ -84,23 +84,6 @@ function GravityStarsBackground({
     }
   }, [initStars, redistributeStars]);
 
-  const handlePointerMove = React.useCallback((e) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    let clientX = 0;
-    let clientY = 0;
-    if ("touches" in e) {
-      const t = e.touches[0];
-      if (!t) return;
-      clientX = t.clientX;
-      clientY = t.clientY;
-    } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
-    }
-    mouseRef.current = { x: clientX - rect.left, y: clientY - rect.top };
-  }, []);
 
   const updateStars = React.useCallback(() => {
     const w = canvasSize.width;
@@ -308,13 +291,33 @@ function GravityStarsBackground({
     };
   }, [animate]);
 
+  // Track the pointer on `window` so the mouse-gravity still works when the
+  // canvas is used as a `pointer-events: none` background (so it never eats
+  // clicks meant for the page content).
+  React.useEffect(() => {
+    const onMove = (e) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const t = e.touches && e.touches[0];
+      const clientX = t ? t.clientX : e.clientX;
+      const clientY = t ? t.clientY : e.clientY;
+      if (clientX == null || clientY == null) return;
+      mouseRef.current = { x: clientX - rect.left, y: clientY - rect.top };
+    };
+    window.addEventListener("mousemove", onMove, { passive: true });
+    window.addEventListener("touchmove", onMove, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("touchmove", onMove);
+    };
+  }, []);
+
   return (
     <div
       ref={containerRef}
       data-slot="gravity-stars-background"
       className={cx("relative size-full overflow-hidden", className)}
-      onMouseMove={(e) => handlePointerMove(e)}
-      onTouchMove={(e) => handlePointerMove(e)}
       {...props}
     >
       <canvas ref={canvasRef} className="block w-full h-full" />

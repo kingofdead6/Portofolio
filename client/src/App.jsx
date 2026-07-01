@@ -19,12 +19,6 @@ import { GravityStarsBackground } from "./components/bg";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// The project page has no background of its own — it shows the same starry
-// backdrop as every other section. The open/close FLIP overlay therefore uses
-// a neutral, mostly-transparent tint so the transition reveals that same
-// background instead of a distinct dark colored panel.
-const projectBg = () => "rgba(11, 11, 15, 0.55)";
-
 export default function App() {
   const root = useRef(null);
   const canvasRef = useRef(null);
@@ -61,32 +55,33 @@ export default function App() {
     gsap.set(page, { autoAlpha: 1 });
     anime.set(els, { opacity: 0, translateY: 40 });
 
-    const tl = anime.timeline();
-    if (ov) {
-      tl.add(
-        {
-          targets: ov,
-          opacity: [1, 0],
-          duration: 450,
-          easing: "easeOutQuad",
-          complete: () => {
-            ov.style.display = "none";
-          },
-        },
-        0
-      );
-    }
-    tl.add(
-      {
-        targets: els,
-        opacity: [0, 1],
-        translateY: [40, 0],
-        delay: anime.stagger(75, { start: 40 }),
-        duration: 950,
-        easing: "easeOutQuart",
-      },
-      120
-    );
+    // Fade + fully hide the FLIP overlay with GSAP — autoAlpha guarantees
+// opacity:0 + visibility:hidden, and onComplete reliably fires, so no dark
+// tint is ever left sitting on top of the project page.
+if (ov) {
+  gsap.to(ov, {
+    autoAlpha: 0,
+    duration: 0.45,
+    ease: "power2.out",
+    onComplete: () => {
+      ov.style.display = "none";
+      ov.style.background = "transparent";
+    },
+  });
+}
+
+const tl = anime.timeline();
+tl.add(
+  {
+    targets: els,
+    opacity: [0, 1],
+    translateY: [40, 0],
+    delay: anime.stagger(75, { start: 40 }),
+    duration: 950,
+    easing: "easeOutQuart",
+  },
+  120
+);
   }, [active]);
 
   useEffect(() => {
@@ -388,7 +383,6 @@ export default function App() {
   // keep the overlay on top until the page mounts (entrance effect cross-fades it).
   const openProject = (idx, cardEl) => {
     const ov = transRef.current;
-    const p = projects[idx];
     if (lenisRef.current) lenisRef.current.stop();
     if (!ov) {
       setActive(idx);
@@ -397,7 +391,9 @@ export default function App() {
     const r = cardEl.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    ov.style.background = projectBg(p);
+    // Neutral translucent tint for the FLIP overlay so the transition reveals
+    // the same starry background as every other page (no dark colored panel).
+    ov.style.background = "rgba(11, 11, 15, 0.55)";
     gsap.set(ov, {
       display: "block",
       top: 0,
@@ -470,7 +466,6 @@ export default function App() {
           glowIntensity={14}
           mouseInfluence={140}
           gravityStrength={80}
-          className="pointer-events-auto"
         />
       </div>
       <div className="ambient ambient--1" />

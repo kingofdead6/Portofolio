@@ -1,6 +1,4 @@
-// Hero-style headline lines. Each inner array is one masked line; a word can be
-// a plain string, or [word, accentColor] to render it as a serif-italic accent
-// (exactly like the hero's "intelligent" / "immersive").
+
 const LINES = [
   ["I", "turn", "complex", "problems"],
   ["into", ["effortless", "text-mint"], "software"],
@@ -10,7 +8,7 @@ const LINES = [
 
 const FACTS = [
   ["Based in", "Algeria"],
-  ["Studio", "Softweave Elevation"],
+  ["Studio", "Softweb Elevation"],
   ["Focus", "Full-stack · CV · Creative dev"],
   ["Status", "Open to remote freelance"],
 ];
