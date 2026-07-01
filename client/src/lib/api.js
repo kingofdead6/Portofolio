@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Backend base URL. Override per-deployment with VITE_API_BASE_URL.
 export const API_BASE_URL =
-  import.meta.env?.VITE_API_BASE_URL || "https://portofolio-6j80.onrender.com/api";
+  import.meta.env?.VITE_API_BASE_URL || "https://tedxuoalgiers.com/portfolio/api";
 
 export const api = axios.create({ baseURL: API_BASE_URL });
 

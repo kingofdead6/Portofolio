@@ -11,11 +11,11 @@ const FIELDS = [
 
 const LABEL =
   "absolute left-4 top-4 text-bone/45 pointer-events-none transition-all duration-300 " +
-  "peer-focus:-top-2.5 peer-focus:left-3 peer-focus:text-xs peer-focus:text-violet peer-focus:bg-ink peer-focus:px-1 " +
-  "peer-[:not(:placeholder-shown)]:-top-2.5 peer-[:not(:placeholder-shown)]:left-3 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:bg-ink peer-[:not(:placeholder-shown)]:px-1";
+  "peer-focus:-top-2.5 peer-focus:left-3 peer-focus:text-xs peer-focus:text-violet peer-focus:bg-ink2 peer-focus:px-1.5 peer-focus:rounded " +
+  "peer-[:not(:placeholder-shown)]:-top-2.5 peer-[:not(:placeholder-shown)]:left-3 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:bg-ink2 peer-[:not(:placeholder-shown)]:px-1.5 peer-[:not(:placeholder-shown)]:rounded";
 
 const FIELD =
-  "peer w-full bg-white/5 rounded-xl border border-line px-4 py-4 outline-none focus:border-violet focus:bg-violet/5 transition-all text-bone";
+  "peer w-full bg-white/[0.04] rounded-xl border border-line px-4 py-4 outline-none focus:border-violet focus:bg-violet/[0.06] focus:ring-2 focus:ring-violet/20 transition-all text-bone placeholder-transparent";
 
 export default function Contact({ scrollTo }) {
   const [sent, setSent] = useState(false);
@@ -63,8 +63,8 @@ export default function Contact({ scrollTo }) {
         HELLO
       </span>
 
-      <div className="contact-head relative">
-        <div className="flex items-center gap-3 mb-6 text-xs tracking-[0.24em] uppercase text-bone/55">
+      <div className="contact-head relative text-center">
+        <div className="flex items-center justify-center gap-3 mb-6 text-xs tracking-[0.24em] uppercase text-bone/55">
           <span className="font-display font-bold text-violet">04</span>
           <span className="w-7 h-px bg-mint inline-block" />
           Contact
@@ -88,9 +88,12 @@ export default function Contact({ scrollTo }) {
         </h2>
       </div>
 
-      <div className="contact-body relative grid md:grid-cols-2 gap-16 mt-20 max-w-5xl">
+      <div className="contact-body relative grid md:grid-cols-2 gap-10 lg:gap-16 mt-16 md:mt-20 max-w-5xl mx-auto items-start text-left">
         {!sent ? (
-          <form onSubmit={submit} className="contact-row space-y-7">
+          <form
+            onSubmit={submit}
+            className="contact-row space-y-6 rounded-2xl border border-line bg-white/2 p-6 sm:p-8"
+          >
             {FIELDS.map(([id, label, type]) => (
               <div key={id} className="relative">
                 <input
@@ -111,7 +114,7 @@ export default function Contact({ scrollTo }) {
               <textarea
                 id="msg"
                 name="msg"
-                rows="3"
+                rows="4"
                 required
                 placeholder=" "
                 data-hover
@@ -125,7 +128,7 @@ export default function Contact({ scrollTo }) {
               data-hover
               data-mag
               type="submit"
-              className="group inline-flex items-center gap-2 px-8 py-4 rounded-full bg-violet text-ink font-medium hover:scale-[1.03] transition-transform"
+              className="group inline-flex w-full items-center justify-center gap-2 px-8 py-4 rounded-full bg-violet text-ink font-medium hover:scale-[1.02] transition-transform"
             >
               Send message
               <span className="inline-block transition-transform group-hover:translate-x-1">
@@ -134,7 +137,7 @@ export default function Contact({ scrollTo }) {
             </button>
           </form>
         ) : (
-          <div className="contact-row sent-msg">
+          <div className="contact-row sent-msg rounded-2xl border border-line bg-white/2 p-6 sm:p-8">
             <div
               className="font-display font-bold text-mint"
               style={{ fontSize: "clamp(1.6rem,4vw,2.6rem)" }}
@@ -158,7 +161,7 @@ export default function Contact({ scrollTo }) {
           </div>
         )}
 
-        <div className="contact-row flex flex-col justify-between">
+        <div className="contact-row flex flex-col justify-between gap-10">
           <div>
             <div className="text-xs tracking-[0.2em] uppercase text-bone/45 mb-3">
               Direct
@@ -189,7 +192,7 @@ export default function Contact({ scrollTo }) {
             </div>
           </div>
 
-          <div className="mt-10">
+          <div>
             <div className="text-xs tracking-[0.2em] uppercase text-bone/45 mb-4">
               Elsewhere
             </div>
@@ -201,7 +204,7 @@ export default function Contact({ scrollTo }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   data-hover
-                  className="group flex items-center justify-between border-t border-line py-4 transition-colors hover:text-bone"
+                  className="group flex items-center justify-between border-t border-line px-2 -mx-2 py-4 rounded-lg transition-colors hover:bg-white/3 hover:text-bone"
                 >
                   <span className="flex items-center gap-4">
                     <span className="text-bone/30 text-xs font-display">

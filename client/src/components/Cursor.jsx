@@ -1,69 +1,55 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 
-/* Unstable blob cursor.
-   - follows the mouse with eased lerp (gsap.quickTo)
-   - never fully settles: a small tremor keeps it shaking around the pointer
-   - the inner blob wobbles (scale + rotate) and morphs its border-radius (CSS)
-   - mix-blend-mode:difference (see index.css) recolours whatever sits beneath it
-   - grows on any [data-hover] target via event delegation (works for the
-     dynamically-mounted project page too) */
+/* Custom cursor.
+   - the dot snaps to the pointer with a quick eased follow
+   - the ring + glow trail a touch slower, giving a fluid, elastic feel
+   - grows over any [data-hover] target via event delegation (covers the
+     dynamically-mounted project page and admin views too)
+   - rendered above everything (z-index in index.css) so overlays never hide it */
 export default function Cursor() {
-  const outer = useRef(null);
-  const blob = useRef(null);
+  const dot = useRef(null);
+  const ring = useRef(null);
 
   useEffect(() => {
     if (window.matchMedia("(hover: none)").matches) return; // skip on touch
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const o = outer.current;
-    const b = blob.current;
-    if (!o) return;
+    const d = dot.current;
+    const r = ring.current;
+    if (!d || !r) return;
 
-    gsap.set(o, { xPercent: -50, yPercent: -50 });
-    const xT = gsap.quickTo(o, "x", { duration: 0.35, ease: "power3" });
-    const yT = gsap.quickTo(o, "y", { duration: 0.35, ease: "power3" });
+    gsap.set([d, r], { xPercent: -50, yPercent: -50 });
+    // dot follows fast, ring lags slightly for the trailing effect
+    const dx = gsap.quickTo(d, "x", { duration: 0.12, ease: "power3" });
+    const dy = gsap.quickTo(d, "y", { duration: 0.12, ease: "power3" });
+    const rx = gsap.quickTo(r, "x", { duration: 0.4, ease: "power3" });
+    const ry = gsap.quickTo(r, "y", { duration: 0.4, ease: "power3" });
 
     let mx = window.innerWidth / 2;
     let my = window.innerHeight / 2;
     const onMove = (e) => {
       mx = e.clientX;
       my = e.clientY;
+      dx(mx);
+      dy(my);
+      rx(mx);
+      ry(my);
     };
     window.addEventListener("mousemove", onMove);
 
-    let raf;
-    let t = 0;
-    const tick = () => {
-      t += 0.08;
-      // tremor: organic sine wobble + a little randomness so it's truly "unstable"
-      const trX = reduce ? 0 : Math.sin(t * 2.3) * 1.4 + (Math.random() - 0.5) * 2.4;
-      const trY = reduce ? 0 : Math.cos(t * 1.9) * 1.4 + (Math.random() - 0.5) * 2.4;
-      xT(mx + trX);
-      yT(my + trY);
-      if (b && !reduce) {
-        const wob = Math.sin(t * 3.1) * 0.07;
-        const sx = 1 + wob + (Math.random() - 0.5) * 0.05;
-        const sy = 1 - wob + (Math.random() - 0.5) * 0.05;
-        b.style.transform = `rotate(${Math.sin(t * 0.6) * 16}deg) scale(${sx}, ${sy})`;
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-
     // grow on interactive elements (delegated → covers later-mounted nodes)
     const over = (e) => {
-      if (e.target.closest && e.target.closest("[data-hover]")) o.classList.add("big");
+      if (e.target.closest && e.target.closest("[data-hover]"))
+        r.parentElement.classList.add("big");
     };
     const out = (e) => {
       const to = e.relatedTarget;
       const stillOn = to && to.closest && to.closest("[data-hover]");
-      if (!stillOn) o.classList.remove("big");
+      if (!stillOn) r.parentElement.classList.remove("big");
     };
     document.addEventListener("mouseover", over);
     document.addEventListener("mouseout", out);
 
     return () => {
-      cancelAnimationFrame(raf);
       window.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseover", over);
       document.removeEventListener("mouseout", out);
@@ -71,8 +57,10 @@ export default function Cursor() {
   }, []);
 
   return (
-    <div ref={outer} className="cursor" aria-hidden="true">
-      <div ref={blob} className="cursor__blob" />
+    <div className="cursor" aria-hidden="true">
+      <div ref={ring} className="cursor__ring" />
+      <span className="cursor__glow" />
+      <div ref={dot} className="cursor__dot" />
     </div>
   );
 }
