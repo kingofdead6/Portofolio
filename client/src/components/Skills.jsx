@@ -77,9 +77,11 @@ export default function Skills({ skills = [] }) {
     const sec = sectionRef.current;
     if (!sec) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const desktop =
-      window.matchMedia("(min-width: 1024px)").matches &&
-      window.matchMedia("(hover: hover)").matches;
+    // Only the pointer-driven tilt/glare needs a real mouse. The pinned
+    // scroll stepper itself runs on every device now (phones included) —
+    // it was previously gated behind `hover:hover` + `min-width:1024px`,
+    // which is exactly why the animation never appeared on touch devices.
+    const hoverable = window.matchMedia("(hover: hover)").matches;
     const groups = Array.from(sec.querySelectorAll(".skill-group"));
     const pills = Array.from(sec.querySelectorAll(".skills-cat"));
     const removers = [];
@@ -89,8 +91,10 @@ export default function Skills({ skills = [] }) {
     // the [skills] dependency re-runs this once the tiles are in the DOM.
     if (groups.length === 0) return;
 
-    // ---------- fallback: natural flow (mobile / reduced motion) ----------
-    if (reduce || !desktop) {
+    // ---------- fallback: natural flow (reduced motion only) ----------
+    // We now ONLY drop to the static stacked layout when the visitor has
+    // asked for reduced motion. Touch / small screens get the real animation.
+    if (reduce) {
       sec.style.height = "auto";
       sec.style.justifyContent = "flex-start";
       sec.classList.remove("overflow-hidden");
@@ -110,7 +114,7 @@ export default function Skills({ skills = [] }) {
       return;
     }
 
-    // ---------- desktop: pinned scroll-driven stepper ----------
+    // ---------- pinned scroll-driven stepper (all devices) ----------
     groups.forEach((g, i) => {
       gsap.set(g, { autoAlpha: i === 0 ? 1 : 0, yPercent: i === 0 ? 0 : 14 });
       g.querySelectorAll(".tile-bar").forEach((b) => gsap.set(b, { scaleX: 0 }));
@@ -155,7 +159,7 @@ export default function Skills({ skills = [] }) {
       if (track) {
         const wrapX = gsap.utils.wrap(-50, 0); // one copy = 50% of the track width
         gsap.to(track, {
-          xPercent: -50 * 0.5, // 6 copy-lengths over the pin; wrap keeps it infinite
+          xPercent: -50 * 0.5, // copy-lengths over the pin; wrap keeps it infinite
           ease: "none",
           modifiers: {
             xPercent: (v) => wrapX(parseFloat(v)),
@@ -238,43 +242,45 @@ export default function Skills({ skills = [] }) {
       tl.to({}, { duration: 0.4 }, pos); // trailing hold before unpin
     }, sec);
 
-    // interactive 3D tilt + glare on the active group's cards
-    sec.querySelectorAll(".skill-card").forEach((card) => {
-      const glare = card.querySelector(".tile-glare");
-      const rX = gsap.quickTo(card, "rotationX", { duration: 0.4, ease: "power3" });
-      const rY = gsap.quickTo(card, "rotationY", { duration: 0.4, ease: "power3" });
+    // interactive 3D tilt + glare — pointer devices only (no touch)
+    if (hoverable) {
+      sec.querySelectorAll(".skill-card").forEach((card) => {
+        const glare = card.querySelector(".tile-glare");
+        const rX = gsap.quickTo(card, "rotationX", { duration: 0.4, ease: "power3" });
+        const rY = gsap.quickTo(card, "rotationY", { duration: 0.4, ease: "power3" });
 
-      const onMove = (e) => {
-        const r = card.getBoundingClientRect();
-        const px = (e.clientX - r.left) / r.width - 0.5;
-        const py = (e.clientY - r.top) / r.height - 0.5;
-        rY(px * 18);
-        rX(-py * 18);
-        if (glare) {
-          glare.style.opacity = "1";
-          glare.style.background = `radial-gradient(circle at ${(px + 0.5) * 100}% ${
-            (py + 0.5) * 100
-          }%, rgba(255,255,255,0.28), transparent 55%)`;
-        }
-      };
-      const onEnter = () =>
-        gsap.to(card, { y: -8, scale: 1.04, duration: 0.4, ease: "power3", overwrite: "auto" });
-      const onLeave = () => {
-        rX(0);
-        rY(0);
-        if (glare) glare.style.opacity = "0";
-        gsap.to(card, { y: 0, scale: 1, duration: 0.6, ease: "power3", overwrite: "auto" });
-      };
+        const onMove = (e) => {
+          const r = card.getBoundingClientRect();
+          const px = (e.clientX - r.left) / r.width - 0.5;
+          const py = (e.clientY - r.top) / r.height - 0.5;
+          rY(px * 18);
+          rX(-py * 18);
+          if (glare) {
+            glare.style.opacity = "1";
+            glare.style.background = `radial-gradient(circle at ${(px + 0.5) * 100}% ${
+              (py + 0.5) * 100
+            }%, rgba(255,255,255,0.28), transparent 55%)`;
+          }
+        };
+        const onEnter = () =>
+          gsap.to(card, { y: -8, scale: 1.04, duration: 0.4, ease: "power3", overwrite: "auto" });
+        const onLeave = () => {
+          rX(0);
+          rY(0);
+          if (glare) glare.style.opacity = "0";
+          gsap.to(card, { y: 0, scale: 1, duration: 0.6, ease: "power3", overwrite: "auto" });
+        };
 
-      card.addEventListener("mousemove", onMove);
-      card.addEventListener("mouseenter", onEnter);
-      card.addEventListener("mouseleave", onLeave);
-      removers.push(() => {
-        card.removeEventListener("mousemove", onMove);
-        card.removeEventListener("mouseenter", onEnter);
-        card.removeEventListener("mouseleave", onLeave);
+        card.addEventListener("mousemove", onMove);
+        card.addEventListener("mouseenter", onEnter);
+        card.addEventListener("mouseleave", onLeave);
+        removers.push(() => {
+          card.removeEventListener("mousemove", onMove);
+          card.removeEventListener("mouseenter", onEnter);
+          card.removeEventListener("mouseleave", onLeave);
+        });
       });
-    });
+    }
 
     return () => {
       removers.forEach((r) => r());
