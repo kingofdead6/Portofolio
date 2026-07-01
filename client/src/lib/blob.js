@@ -55,38 +55,45 @@ export function initThree(canvas) {
   const blob = new THREE.Group();
   scene.add(blob);
 
+  const mobile = window.innerWidth < 768;
+
   let model = null;
   let disposed = false;
-  const loader = new GLTFLoader();
-  loader.load(
-    MODEL_URL,
-    (gltf) => {
-      if (disposed) {
-        disposeObject(gltf.scene);
-        return;
-      }
-      model = gltf.scene;
+  // On mobile we drop the 3D character model entirely and keep only the
+  // wireframe globe (shell) below — lighter to render and less cramped on
+  // small screens.
+  if (!mobile) {
+    const loader = new GLTFLoader();
+    loader.load(
+      MODEL_URL,
+      (gltf) => {
+        if (disposed) {
+          disposeObject(gltf.scene);
+          return;
+        }
+        model = gltf.scene;
 
-      // Normalize. ORDER MATTERS: scale first, then recenter in the scaled
-      // space. Recentering before scaling leaves the pivot off-centre, so the
-      // model orbits the wrapper instead of spinning in place.
-      let box = new THREE.Box3().setFromObject(model);
-      const size = box.getSize(new THREE.Vector3());
-      const maxAxis = Math.max(size.x, size.y, size.z) || 1;
-      model.scale.setScalar(2.7 / maxAxis); // match the old blob footprint
+        // Normalize. ORDER MATTERS: scale first, then recenter in the scaled
+        // space. Recentering before scaling leaves the pivot off-centre, so the
+        // model orbits the wrapper instead of spinning in place.
+        let box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const maxAxis = Math.max(size.x, size.y, size.z) || 1;
+        model.scale.setScalar(2.7 / maxAxis); // match the old blob footprint
 
-      box = new THREE.Box3().setFromObject(model); // recompute after scaling
-      const center = box.getCenter(new THREE.Vector3());
-      model.position.sub(center); // now correctly centred at the wrapper origin
+        box = new THREE.Box3().setFromObject(model); // recompute after scaling
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.sub(center); // now correctly centred at the wrapper origin
 
-      // If the character faces away from the camera, uncomment:
-      // model.rotation.y = Math.PI;
+        // If the character faces away from the camera, uncomment:
+        // model.rotation.y = Math.PI;
 
-      blob.add(model);
-    },
-    undefined,
-    (err) => console.warn("GLB load failed:", err)
-  );
+        blob.add(model);
+      },
+      undefined,
+      (err) => console.warn("GLB load failed:", err)
+    );
+  }
 
   const shell = new THREE.LineSegments(
     new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(2.0, 2)),
@@ -111,7 +118,6 @@ export function initThree(canvas) {
   dir.position.set(0, 4, 6);
   scene.add(dir);
 
-  const mobile = window.innerWidth < 768;
   const offX = mobile ? 0.0 : 1.75;
   blob.position.set(offX, 0.25, 0);
   if (mobile) blob.scale.setScalar(0.8);
