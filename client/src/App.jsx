@@ -5,6 +5,7 @@ import anime from "animejs";
 import Lenis from "lenis";
 
 import { initThree } from "./lib/blob";
+import { initSpace } from "./lib/space";
 import { useData } from "./lib/DataContext";
 
 import Cursor from "./components/Cursor";
@@ -15,7 +16,8 @@ import Skills from "./components/Skills";
 import Work from "./components/Work";
 import Contact from "./components/Contact";
 import ProjectPage from "./components/ProjectPage";
-import { GravityStarsBackground } from "./components/bg";
+import Preloader from "./components/Preloader";
+import { NAV } from "./lib/data";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -26,10 +28,46 @@ export default function App() {
   const pageRef = useRef(null);
   const three = useRef(null);
   const lenisRef = useRef(null);
+  const spaceCanvas = useRef(null);
+  const modelWrap = useRef(null);
+  const wasActive = useRef(false);
+  const space = useRef(null);
+  const introRef = useRef(null);
+  const launchedRef = useRef(false);
+  const altRef = useRef(null);
+  const altNum = useRef(null);
   const [active, setActive] = useState(null);
   const [activeSec, setActiveSec] = useState("home");
+  const [launched, setLaunched] = useState(false);
+  const [booted, setBooted] = useState(false);
 
   const { projects, skills, categories, loading } = useData();
+
+  // deep-space backdrop — starts immediately so it's alive behind the preloader
+  useEffect(() => {
+    if (!spaceCanvas.current) return;
+    try {
+      space.current = initSpace(spaceCanvas.current);
+    } catch (e) {
+      console.warn("Space off:", e);
+    }
+    return () => {
+      if (space.current) space.current.dispose();
+      space.current = null;
+    };
+  }, []);
+
+  // launch: hyperspace burst, release the scroll lock and run the hero intro
+  const onLaunch = () => {
+    launchedRef.current = true;
+    if (space.current) space.current.warp(2.4);
+    setLaunched(true);
+  };
+  useEffect(() => {
+    if (!launched) return;
+    if (lenisRef.current) lenisRef.current.start();
+    if (introRef.current) introRef.current.play();
+  }, [launched]);
 
   // lock scroll behind project page
   useEffect(() => {
@@ -37,10 +75,15 @@ export default function App() {
     if (lenisRef.current) {
       active !== null ? lenisRef.current.stop() : lenisRef.current.start();
     }
-    if (canvasRef.current)
-      canvasRef.current.style.transition = "opacity .5s ease";
-    if (canvasRef.current)
-      canvasRef.current.style.opacity = active !== null ? "0" : "";
+    // Hide the 3D model via its wrapper, never the canvas itself — the canvas
+    // opacity belongs to the About scroll-fade, and resetting it would bring
+    // the model back over Work after closing a project.
+    const open = active !== null;
+    if (modelWrap.current && (open || wasActive.current))
+      gsap.to(modelWrap.current, { autoAlpha: open ? 0 : 1, duration: 0.5, ease: "power2.out" });
+    wasActive.current = open;
+    // the project page is opaque — stop rendering the galaxy behind it
+    if (space.current) space.current.pause(active !== null);
   }, [active]);
 
   // project page entrance — overlay stays on top through the mount, then
@@ -101,12 +144,43 @@ tl.add(
       if (canvasRef.current) canvasRef.current.style.display = "none";
     }
 
-    if (reduce) return;
+    // ---- space: travel through the nebula with page progress, raise the
+    // planet as Contact arrives, feed the altitude HUD ----
+    const spaceTriggers = [
+      ScrollTrigger.create({
+        trigger: document.body,
+        start: "top top",
+        end: "bottom bottom",
+        onUpdate: (self) => {
+          if (space.current) space.current.setScroll(self.progress);
+          if (altRef.current) altRef.current.style.transform = `translateY(${self.progress * 100}%)`;
+          if (altNum.current)
+            altNum.current.textContent = String(Math.round(self.progress * 100)).padStart(3, "0");
+        },
+      }),
+      ScrollTrigger.create({
+        trigger: "#contact",
+        start: "top bottom",
+        end: "top 15%",
+        invalidateOnRefresh: true,
+        onUpdate: (self) => space.current && space.current.setPlanet(self.progress),
+      }),
+    ];
+
+    if (reduce) {
+      return () => spaceTriggers.forEach((t) => t.kill());
+    }
 
     // ---- smooth scroll (Lenis) ----
     const lenis = new Lenis({ lerp: 0.1, smoothWheel: true });
     lenisRef.current = lenis;
-    lenis.on("scroll", ScrollTrigger.update);
+    // hold the page still until the launch sequence has cleared
+    if (!launchedRef.current) lenis.stop();
+    lenis.on("scroll", (l) => {
+      ScrollTrigger.update();
+      // scroll speed drives the warp streaks
+      if (space.current) space.current.setVelocity(l.velocity);
+    });
 
     // Drive Lenis from GSAP's own ticker instead of a separate rAF loop —
     // this is the officially recommended Lenis + GSAP pairing and avoids
@@ -120,21 +194,35 @@ tl.add(
 
     // ---- intro (anime) ----
     anime.set(q(".nav"), { opacity: 0, translateY: -20 });
-    anime.set(qa(".hero-char"), { translateY: "110%" });
+    anime.set(qa(".hero-char"), { translateY: "110%", rotate: 8, opacity: 0 });
     anime.set(qa(".hero-fade"), { opacity: 0, translateY: 22 });
-    const tl = anime.timeline({ easing: "easeOutQuart" });
+    anime.set(qa(".hud-alt"), { opacity: 0 });
+    anime.set(modelWrap.current, { opacity: 0 });
+    const tl = anime.timeline({ easing: "easeOutQuart", autoplay: false });
     tl.add(
-      { targets: q(".nav"), opacity: [0, 1], translateY: [-20, 0], duration: 900 },
-      300
+      {
+        targets: modelWrap.current,
+        opacity: [0, 1],
+        duration: 1600,
+        easing: "easeInOutQuad",
+      },
+      350
     )
+      .add(
+        { targets: q(".nav"), opacity: [0, 1], translateY: [-20, 0], duration: 900 },
+        500
+      )
       .add(
         {
           targets: qa(".hero-char"),
           translateY: ["110%", "0%"],
-          duration: 1100,
-          delay: anime.stagger(22),
+          rotate: [8, 0],
+          opacity: [0, 1],
+          duration: 1300,
+          easing: "easeOutExpo",
+          delay: anime.stagger(24),
         },
-        500
+        650
       )
       .add(
         {
@@ -144,8 +232,11 @@ tl.add(
           duration: 900,
           delay: anime.stagger(120),
         },
-        900
-      );
+        1150
+      )
+      .add({ targets: qa(".hud-alt"), opacity: [0, 1], duration: 900 }, 1400);
+    introRef.current = tl;
+    if (launchedRef.current) tl.play();
 
     // ---- 3D scroll choreography ----
     if (three.current) {
@@ -365,6 +456,7 @@ tl.add(
       } catch {
         /* noop */
       }
+      introRef.current = null;
       try {
         ScrollTrigger.getAll().forEach((t) => t.kill());
       } catch {
@@ -461,30 +553,41 @@ tl.add(
   return (
 
     <div ref={root} className="font-body text-bone">
-      {/* animated gravity-stars background — fixed behind all content */}
-      <div
-        className="fixed inset-0 z-0 pointer-events-none"
-        style={{ color: "#ECECF1" }}
-        aria-hidden="true"
-      >
-        <GravityStarsBackground
-          starsCount={90}
-          starsOpacity={0.7}
-          glowIntensity={14}
-          mouseInfluence={140}
-          gravityStrength={80}
-        />
+      {/* deep-space WebGL backdrop — fixed behind all content */}
+      <canvas ref={spaceCanvas} className="space-canvas" aria-hidden="true" />
+      <div className="space-vignette" aria-hidden="true" />
+      <div ref={modelWrap} className="fixed inset-0 z-0 pointer-events-none">
+        <canvas id="bg" ref={canvasRef}></canvas>
       </div>
-      <div className="ambient ambient--1" />
-      <div className="ambient ambient--2" />
-      <canvas id="bg" ref={canvasRef}></canvas>
       <div className="grain"></div>
       <Cursor />
+      {!booted && (
+        <Preloader ready={!loading} onLaunch={onLaunch} onDone={() => setBooted(true)} />
+      )}
       <div
-        className="fixed top-0 left-0 h-[2px] bg-violet z-[80] origin-left"
+        className="fixed top-0 left-0 h-[2px] z-[80] origin-left bg-gradient-to-r from-violet via-[#38D6FF] to-mint shadow-[0_0_12px_rgba(120,102,255,.9)]"
         id="bar"
         style={{ transform: "scaleX(0)", width: "100%" }}
       ></div>
+
+      {/* altitude HUD — page progress + current sector (desktop) */}
+      <div className="hud-alt hidden lg:flex fixed right-6 top-1/2 -translate-y-1/2 z-40 items-center gap-3 pointer-events-none">
+        <div className="text-right text-[10px] tracking-[0.25em] uppercase text-bone/40 leading-relaxed">
+          <div>
+            Alt <span ref={altNum} className="tabular-nums text-bone/80">000</span>
+          </div>
+          <div className="text-violet/90">
+            {(NAV.find(([, id]) => id === activeSec) || NAV[0])[0]}
+          </div>
+        </div>
+        <div className="hud-alt__track relative h-40 w-2">
+          <div className="absolute inset-x-0 top-0 h-full">
+            <span ref={altRef} className="hud-alt__mark absolute left-0 top-0 block h-full w-full">
+              <span className="absolute -left-1 top-0 block h-px w-4 -translate-y-1/2 bg-mint shadow-[0_0_8px_#5BE9B9]" />
+            </span>
+          </div>
+        </div>
+      </div>
       <div
         ref={transRef}
         className="fixed z-[70] hidden"

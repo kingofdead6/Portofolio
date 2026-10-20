@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, Fragment } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { cardGradient } from "../lib/data";
+import SectionTag from "./SectionTag";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -39,8 +40,12 @@ function CategorySlab({ cat, index, count }) {
       style={{ width: "clamp(210px,26vw,340px)", height: "clamp(360px,62vh,560px)" }}
     >
       <div>
-        <div className="font-display font-bold text-sm" style={{ color: cat.accent }}>
-          {String(index + 1).padStart(2, "0")}
+        <div className="flex items-center gap-2 font-display font-bold text-sm" style={{ color: cat.accent }}>
+          <span
+            className="h-1.5 w-1.5 rounded-full"
+            style={{ background: cat.accent, boxShadow: `0 0 10px ${cat.accent}` }}
+          />
+          Sector {String(index + 1).padStart(2, "0")}
         </div>
         <div className="mt-4 h-px w-14" style={{ background: cat.accent }} />
       </div>
@@ -67,7 +72,7 @@ function CategorySlab({ cat, index, count }) {
 function EmptyCard({ accent }) {
   return (
     <div
-      className="flex-none rounded-[28px] border border-dashed border-line grid place-items-center"
+      className="flex-none rounded-[28px] border border-dashed border-line bg-[#0a0a14]/40 backdrop-blur-sm grid place-items-center"
       style={{ width: "clamp(240px,60vw,380px)", aspectRatio: "4/5" }}
     >
       <div className="text-center px-6">
@@ -99,7 +104,7 @@ function ProjectCard({ p, index, num, accent, onOpen }) {
       style={{ width: "clamp(280px,72vw,460px)", perspective: "1000px" }}
     >
       <div
-        className="work-card-inner relative rounded-[26px] overflow-hidden ring-1 ring-white/10 transition-shadow duration-500 group-hover:shadow-2xl group-hover:shadow-black/50"
+        className="work-card-inner holo relative rounded-[26px] overflow-hidden ring-1 ring-white/10 transition-shadow duration-500 group-hover:shadow-2xl group-hover:shadow-black/50"
         style={{ aspectRatio: "4/5", willChange: "transform" }}
       >
         {/* image / gradient background — parallax target (scaled in App.jsx) */}
@@ -229,7 +234,12 @@ export default function Work({ projects = [], categories = [], openProject, scro
   // must be recomputed. We refresh on the next frame (after React paints the
   // new set) and snap back to the top of the section so the filtered rail
   // reads from its first card.
+  // Only on an actual filter change — never on mount, or the page would jump
+  // to Work on load. (Comparing values also survives StrictMode's re-run.)
+  const prevCat = useRef(activeCat);
   useEffect(() => {
+    if (prevCat.current === activeCat) return;
+    prevCat.current = activeCat;
     const id = requestAnimationFrame(() => {
       ScrollTrigger.refresh();
       if (scrollTo) scrollTo("work");
@@ -287,16 +297,12 @@ export default function Work({ projects = [], categories = [], openProject, scro
   }, [activeCat, projects.length, categories.length]);
 
   return (
-    <section ref={sectionRef} id="work" className="relative z-10 bg-ink/70 overflow-hidden">
+    <section ref={sectionRef} id="work" className="relative z-10 bg-[#05050a]/40 overflow-hidden">
       {/* header + filter chips (stay visible through the pin) */}
-      <div className="absolute top-8 md:top-10 left-0 right-0 z-20 px-6 md:px-12">
-        <div className="flex items-center gap-3 text-xs tracking-[0.24em] uppercase text-bone/55">
-          <span className="font-display font-bold text-violet">03</span>
-          <span className="w-7 h-px bg-violet inline-block" />
-          Selected work
-        </div>
+      <div className="absolute top-20 md:top-24 left-0 right-0 z-20 px-6 md:px-12 flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
+        <SectionTag num="03" label="Selected work" className="flex-none" />
 
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
           <FilterChip
             label="All"
             accent="#7866FF"

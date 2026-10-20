@@ -1,6 +1,7 @@
 import { useState } from "react";
 import anime from "animejs";
 import Split from "./Split";
+import SectionTag from "./SectionTag";
 import { SOCIALS, EMAIL, CV_URL } from "../lib/data";
 import { api } from "../lib/api";
 
@@ -64,13 +65,9 @@ export default function Contact({ scrollTo }) {
       </span>
 
       <div className="contact-head relative text-center">
-        <div className="flex items-center justify-center gap-3 mb-6 text-xs tracking-[0.24em] uppercase text-bone/55">
-          <span className="font-display font-bold text-violet">04</span>
-          <span className="w-7 h-px bg-mint inline-block" />
-          Contact
-        </div>
+        <SectionTag num="04" label="Contact" align="center" className="mb-6" />
         <h2
-          className="font-display font-extrabold tracking-tight leading-[0.92]"
+          className="glow-title font-display font-extrabold tracking-tight leading-[0.92]"
           style={{ fontSize: "clamp(2.6rem,10vw,9rem)" }}
         >
           <span className="mask">
@@ -92,7 +89,7 @@ export default function Contact({ scrollTo }) {
         {!sent ? (
           <form
             onSubmit={submit}
-            className="contact-row space-y-6 rounded-2xl border border-line bg-white/2 p-6 sm:p-8"
+            className="contact-row hud-panel space-y-6 rounded-2xl p-6 sm:p-8"
           >
             {FIELDS.map(([id, label, type]) => (
               <div key={id} className="relative">
@@ -128,16 +125,16 @@ export default function Contact({ scrollTo }) {
               data-hover
               data-mag
               type="submit"
-              className="group inline-flex w-full items-center justify-center gap-2 px-8 py-4 rounded-full bg-violet text-ink font-medium hover:scale-[1.02] transition-transform"
+              className="btn-launch group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden px-8 py-4 rounded-full bg-violet text-ink font-medium hover:scale-[1.02] transition-transform"
             >
-              Send message
-              <span className="inline-block transition-transform group-hover:translate-x-1">
-                →
+              <span className="relative">Transmit message</span>
+              <span className="relative inline-block transition-transform duration-500 group-hover:translate-x-1 group-hover:-translate-y-1">
+                ↗
               </span>
             </button>
           </form>
         ) : (
-          <div className="contact-row sent-msg rounded-2xl border border-line bg-white/2 p-6 sm:p-8">
+          <div className="contact-row sent-msg hud-panel rounded-2xl p-6 sm:p-8">
             <div
               className="font-display font-bold text-mint"
               style={{ fontSize: "clamp(1.6rem,4vw,2.6rem)" }}
@@ -231,7 +228,7 @@ export default function Contact({ scrollTo }) {
           onClick={() => scrollTo("home")}
           className="text-bone/70 hover:text-bone"
         >
-          Back to top ↑
+          Return to orbit ↑
         </button>
       </div>
     </section>

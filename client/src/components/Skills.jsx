@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Split from "./Split";
+import SectionTag from "./SectionTag";
 import { icon } from "../lib/DataContext";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -10,7 +11,7 @@ function SkillTile({ it, accent }) {
   return (
     <div
       data-hover
-      className="skill-card group relative overflow-hidden rounded-2xl border border-line bg-white/5 backdrop-blur-sm p-5"
+      className="skill-card holo group relative overflow-hidden rounded-2xl border border-line bg-[#0a0a14]/55 backdrop-blur-md p-5"
       style={{ willChange: "transform" }}
     >
       <div
@@ -359,12 +360,9 @@ export default function Skills({ skills = [] }) {
     >
       {/* header */}
       <div className="skills-head shrink-0">
-        <div className="flex items-center gap-4 mb-4">
-          <span className="font-display font-bold text-violet text-sm md:text-base">02</span>
-          <span className="text-xs tracking-[0.24em] uppercase text-bone/45">Skills</span>
-        </div>
+        <SectionTag num="02" label="Skills" className="mb-4" />
         <h2
-          className="font-display font-extrabold tracking-tight leading-[0.95]"
+          className="glow-title font-display font-extrabold tracking-tight leading-[0.95]"
           style={{ fontSize: "clamp(1.8rem,5vw,4rem)" }}
         >
           <span className="mask">
@@ -404,7 +402,10 @@ export default function Skills({ skills = [] }) {
               style={{ background: grp.accent }}
             />
             <div className="relative flex items-center gap-4 mb-7">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: grp.accent }} />
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ background: grp.accent, boxShadow: `0 0 12px ${grp.accent}` }}
+              />
               <div className="flex items-baseline gap-3">
                 <h3 className="font-display font-bold text-xl md:text-2xl tracking-tight text-bone">
                   {grp.group}

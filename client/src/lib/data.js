@@ -96,6 +96,22 @@ export const cardGradient = (project) => {
   return { c1, c2 };
 };
 
+// Cloudinary delivery transform — serve a resized, auto-format/quality copy
+// instead of the full-size upload. Non-Cloudinary URLs pass through untouched.
+export const cld = (url, w) =>
+  url && url.includes("res.cloudinary.com") && url.includes("/upload/")
+    ? url.replace("/upload/", `/upload/f_auto,q_auto,w_${w}/`)
+    : url;
+
+// "https://www.foo.com/bar" → "foo.com" (for the mock browser URL bar)
+export const hostOf = (url) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+};
+
 /* High-level work categories. `key` ties projects to a category; `accent`
    colour-zones each section of the rail. Rename labels/sub freely. */
 export const CATEGORIES = [
