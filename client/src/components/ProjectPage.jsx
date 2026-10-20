@@ -73,6 +73,10 @@ export default function ProjectPage({
   return (
     <div
       ref={pageRef}
+      // Lenis is stopped while a project is open, and a stopped Lenis cancels
+      // every wheel event on the page — this opts the overlay out so it can
+      // scroll natively.
+      data-lenis-prevent
       className="pp fixed inset-0 z-[60] overflow-y-auto overscroll-contain"
       style={{ "--acc": accent }}
     >
