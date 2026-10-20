@@ -355,6 +355,47 @@ canvas#bg {
   transition: transform 0.15s linear;
 }
 
+/* ---- Work rail ---- */
+.work-section {
+  /* card width bounded by both screen width and height so a whole card
+     (window + meta) always fits under the pinned header */
+  --work-w: clamp(260px, min(80vw, calc((100vh - 470px) * 1.78)), 560px);
+  --work-h: calc(var(--work-w) * 0.5625 + 165px);
+}
+.work-rail-item {
+  will-change: transform, opacity;
+}
+/* traffic lights light up when the window is hovered */
+.bdot {
+  transition: background-color 0.35s ease, box-shadow 0.35s ease;
+}
+.group:hover .bdot {
+  background-color: var(--dot);
+  box-shadow: 0 0 6px var(--dot);
+}
+
+/* ---- Project page ---- */
+/* static star dust layer (cheap — the WebGL sky is paused behind the page) */
+.pp-stars {
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.8), transparent 60%),
+    radial-gradient(1px 1px at 72% 12%, rgba(255, 255, 255, 0.6), transparent 60%),
+    radial-gradient(1.5px 1.5px at 38% 64%, rgba(201, 194, 255, 0.8), transparent 60%),
+    radial-gradient(1px 1px at 88% 52%, rgba(255, 255, 255, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 22% 82%, rgba(255, 255, 255, 0.5), transparent 60%),
+    radial-gradient(1.5px 1.5px at 62% 88%, rgba(91, 233, 185, 0.7), transparent 60%),
+    radial-gradient(1px 1px at 52% 34%, rgba(255, 255, 255, 0.45), transparent 60%),
+    radial-gradient(1px 1px at 92% 82%, rgba(255, 255, 255, 0.6), transparent 60%);
+  background-size: 420px 420px;
+  animation: ppDrift 120s linear infinite;
+}
+@keyframes ppDrift {
+  to { background-position: 420px -840px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-stars { animation: none; }
+}
+
 /* ---- launch button shimmer ---- */
 .btn-launch::before {
   content: "";

@@ -17,7 +17,7 @@ import Work from "./components/Work";
 import Contact from "./components/Contact";
 import ProjectPage from "./components/ProjectPage";
 import Preloader from "./components/Preloader";
-import { NAV } from "./lib/data";
+import { NAV, cardGradient } from "./lib/data";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -31,6 +31,8 @@ export default function App() {
   const spaceCanvas = useRef(null);
   const modelWrap = useRef(null);
   const wasActive = useRef(false);
+  const workST = useRef(null);
+  const navBusy = useRef(false);
   const space = useRef(null);
   const introRef = useRef(null);
   const launchedRef = useRef(false);
@@ -93,10 +95,14 @@ export default function App() {
     const ov = transRef.current;
     const page = pageRef.current;
     const els = page.querySelectorAll(".pp-el");
+    const words = page.querySelectorAll(".pp-word");
+    const title = page.querySelector(".pp-title");
 
     gsap.set(page, { clearProps: "transform,opacity,visibility" });
     gsap.set(page, { autoAlpha: 1 });
     anime.set(els, { opacity: 0, translateY: 40 });
+    if (title) anime.set(title, { opacity: 1, translateY: 0 });
+    anime.set(words, { translateY: "110%", rotate: 6 });
 
     // Fade + fully hide the FLIP overlay with GSAP — autoAlpha guarantees
 // opacity:0 + visibility:hidden, and onComplete reliably fires, so no dark
@@ -124,6 +130,16 @@ tl.add(
     easing: "easeOutQuart",
   },
   120
+).add(
+  {
+    targets: words,
+    translateY: ["110%", "0%"],
+    rotate: [6, 0],
+    delay: anime.stagger(70),
+    duration: 1100,
+    easing: "easeOutExpo",
+  },
+  220
 );
   }, [active]);
 
@@ -144,14 +160,45 @@ tl.add(
       if (canvasRef.current) canvasRef.current.style.display = "none";
     }
 
+    // Active section = the last one whose top has crossed 55% of the screen.
+    // Read from live layout rather than per-section ScrollTriggers: pinned
+    // sections (Skills, Work) are one screen tall but stay on screen for
+    // thousands of px, which trigger ranges measured at refresh got wrong.
+    const SECS = ["home", "about", "skills", "work", "contact"];
+    let lastSec = null;
+    let secRaf = 0;
+    // deferred a frame so pins have settled (a pin releasing in the same
+    // update would still read as fixed at top: 0)
+    const updateSec = () => {
+      if (!secRaf) secRaf = requestAnimationFrame(readSec);
+    };
+    const readSec = () => {
+      secRaf = 0;
+      const line = window.innerHeight * 0.55;
+      let cur = SECS[0];
+      for (const id of SECS) {
+        const n = document.getElementById(id);
+        if (n && n.getBoundingClientRect().top <= line) cur = id;
+      }
+      if (cur !== lastSec) {
+        lastSec = cur;
+        setActiveSec(cur);
+      }
+    };
+
     // ---- space: travel through the nebula with page progress, raise the
     // planet as Contact arrives, feed the altitude HUD ----
     const spaceTriggers = [
+      // refreshPriority -1: measured after the Skills/Work pins have added
+      // their spacing — these are created before them, and would otherwise
+      // see a page ~25,000px too short.
       ScrollTrigger.create({
         trigger: document.body,
         start: "top top",
         end: "bottom bottom",
+        refreshPriority: -1,
         onUpdate: (self) => {
+          updateSec();
           if (space.current) space.current.setScroll(self.progress);
           if (altRef.current) altRef.current.style.transform = `translateY(${self.progress * 100}%)`;
           if (altNum.current)
@@ -163,12 +210,16 @@ tl.add(
         start: "top bottom",
         end: "top 15%",
         invalidateOnRefresh: true,
+        refreshPriority: -1,
         onUpdate: (self) => space.current && space.current.setPlanet(self.progress),
       }),
     ];
 
     if (reduce) {
-      return () => spaceTriggers.forEach((t) => t.kill());
+      return () => {
+        cancelAnimationFrame(secRaf);
+        spaceTriggers.forEach((t) => t.kill());
+      };
     }
 
     // ---- smooth scroll (Lenis) ----
@@ -311,9 +362,44 @@ tl.add(
     if (track) {
       const amount = () =>
         track.scrollWidth - window.innerWidth + window.innerWidth * 0.06;
-      gsap.to(track, {
+
+      // Live collections — they follow the filter as React swaps cards in/out.
+      const items = track.getElementsByClassName("work-rail-item");
+      const cards = track.getElementsByClassName("work-card");
+      const sec = q("#work");
+      // Orbital curve: items bank and recede the further they sit from the
+      // centre of the screen, so the rail reads like a carousel in space.
+      // Also lights up the HUD counter with the card nearest the centre.
+      const curve = () => {
+        const vw = window.innerWidth;
+        const x = gsap.getProperty(track, "x");
+        for (let i = 0; i < items.length; i++) {
+          const el = items[i];
+          const d = (el.offsetLeft + el.offsetWidth / 2 + x - vw / 2) / vw;
+          const a = Math.min(Math.abs(d), 1.2);
+          // perspective() per item keeps the vanishing point on each card —
+          // a shared one on the (very wide) track skews the whole rail
+          el.style.transform = `perspective(1600px) rotateY(${(-d * 14).toFixed(2)}deg) scale(${(1 - a * 0.08).toFixed(3)})`;
+          el.style.opacity = (1 - Math.max(0, a - 0.42) * 0.85).toFixed(3);
+        }
+        let best = 0;
+        let bestD = Infinity;
+        for (let i = 0; i < cards.length; i++) {
+          const el = cards[i];
+          const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 + x - vw / 2);
+          if (d < bestD) {
+            bestD = d;
+            best = i;
+          }
+        }
+        const cnt = sec && sec.querySelector(".work-hud-count");
+        if (cnt) cnt.textContent = String(cards.length ? best + 1 : 0).padStart(2, "0");
+      };
+
+      const railTween = gsap.to(track, {
         x: () => -amount(),
         ease: "none",
+        onUpdate: curve,
         scrollTrigger: {
           trigger: "#work",
           start: "top top",
@@ -322,8 +408,15 @@ tl.add(
           scrub: 1,
           invalidateOnRefresh: true,
           anticipatePin: 1,
+          onUpdate: (self) => {
+            const bar = sec && sec.querySelector(".work-hud-bar");
+            if (bar) bar.style.transform = `scaleX(${self.progress})`;
+          },
+          onRefresh: () => requestAnimationFrame(curve),
         },
       });
+      workST.current = railTween.scrollTrigger;
+      curve();
       gsap.utils.toArray(".work-card .work-img").forEach((img) => {
         gsap.fromTo(
           img,
@@ -392,16 +485,7 @@ tl.add(
     });
 
     // ---- nav active section ----
-    ["home", "about", "skills", "work", "contact"].forEach((id) => {
-      ScrollTrigger.create({
-        trigger: "#" + id,
-        start: "top 55%",
-        end: "bottom 55%",
-        onToggle: (self) => {
-          if (self.isActive) setActiveSec(id);
-        },
-      });
-    });
+    // Driven by the body progress trigger above (see updateSec).
 
     // ---- progress bar ----
     gsap.to("#bar", {
@@ -457,6 +541,8 @@ tl.add(
         /* noop */
       }
       introRef.current = null;
+      workST.current = null;
+      cancelAnimationFrame(secRaf);
       try {
         ScrollTrigger.getAll().forEach((t) => t.kill());
       } catch {
@@ -490,9 +576,10 @@ tl.add(
     const r = cardEl.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    // Neutral translucent tint for the FLIP overlay so the transition reveals
-    // the same starry background as every other page (no dark colored panel).
-    ov.style.background = "rgba(11, 11, 15, 0.55)";
+    // The overlay is painted like the project page's own backdrop (deep space
+    // + the project's accent glow), so the card visibly becomes the page.
+    const acc = accentOf(projects[idx]);
+    ov.style.background = `radial-gradient(90% 70% at 80% 0%, ${acc}38, transparent 60%), radial-gradient(70% 60% at 0% 100%, ${acc}1f, transparent 60%), #05050a`;
     gsap.set(ov, {
       display: "block",
       top: 0,
@@ -527,7 +614,25 @@ tl.add(
       setActive(null);
       return;
     }
-    const els = page.querySelectorAll(".pp-el");
+    if (navBusy.current) return;
+    navBusy.current = true;
+
+    // While the page still covers the screen, jump the pinned rail so the card
+    // for this project sits centred — closing lands you back where you were.
+    let parked = false;
+    const st = workST.current;
+    const card = document.querySelector(`.work-card[data-idx="${active}"]`);
+    if (st && card && lenisRef.current) {
+      const off = card.offsetLeft + card.offsetWidth / 2 - window.innerWidth / 2;
+      const y = st.start + Math.max(0, Math.min(st.end - st.start, off));
+      lenisRef.current.scrollTo(y, { immediate: true, force: true });
+      ScrollTrigger.update();
+      const tw = st.getTween && st.getTween();
+      if (tw) tw.progress(1);
+      parked = true;
+    }
+
+    const els = page.querySelectorAll(".pp-el, .pp-title");
     anime({
       targets: els,
       opacity: [1, 0],
@@ -543,9 +648,42 @@ tl.add(
       ease: "power3.in",
       delay: 0.18,
       onComplete: () => {
+        navBusy.current = false;
         setActive(null);
         if (lenisRef.current) lenisRef.current.start();
-        scrollTo("work");
+        if (!parked) scrollTo("work");
+      },
+    });
+  };
+
+  // Rail order (category by category) — prev/next on the project page walk it.
+  const order = categories.flatMap((c) =>
+    projects.reduce((acc, p, i) => (p.category === c.key ? [...acc, i] : acc), [])
+  );
+  const accentOf = (p) =>
+    (p && (categories.find((c) => c.key === p.category) || {}).accent) ||
+    cardGradient(p || {}).c1;
+
+  // PREV / NEXT inside the project page: content out, swap, content back in
+  // (the [active] entrance effect replays the stagger for the new project).
+  const navProject = (dir) => {
+    if (active === null || navBusy.current || order.length < 2) return;
+    const pos = order.indexOf(active);
+    const nextIdx = order[(Math.max(pos, 0) + dir + order.length) % order.length];
+    const page = pageRef.current;
+    if (!page) return setActive(nextIdx);
+    navBusy.current = true;
+    anime({
+      targets: page.querySelectorAll(".pp-el, .pp-title"),
+      opacity: [1, 0],
+      translateY: [0, dir > 0 ? -26 : 26],
+      delay: anime.stagger(18),
+      duration: 300,
+      easing: "easeInQuad",
+      complete: () => {
+        page.scrollTop = 0;
+        navBusy.current = false;
+        setActive(nextIdx);
       },
     });
   };
@@ -609,6 +747,12 @@ tl.add(
       {active !== null && projects[active] && (
         <ProjectPage
           p={projects[active]}
+          accent={accentOf(projects[active])}
+          category={categories.find((c) => c.key === projects[active].category)}
+          pos={Math.max(order.indexOf(active), 0)}
+          total={order.length || projects.length}
+          next={projects[order[(order.indexOf(active) + 1) % order.length]]}
+          onNav={navProject}
           onClose={closeProject}
           pageRef={pageRef}
         />
